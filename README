@@ -1,0 +1,144 @@
+--------------------------------------------------------------------------------
+FotoPreProcessor, a PyQT4-based program to manage (EXIF) metadata of images
+$Id$
+--------------------------------------------------------------------------------
+
+Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+
+This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Following files are also subject to this license although not explicitly marked:
+   i18n/FotoPreProcessor.de.qm
+   i18n/FotoPreProcessor.de.ts 
+
+--------------------------------------------------------------------------------
+General information
+--------------------------------------------------------------------------------
+
+Author:  Frank Abelbeck
+Version: 2012-08-10
+Licence: GNU General Public License version 3
+
+--------------------------------------------------------------------------------
+Disclaimer
+--------------------------------------------------------------------------------
+
+I created this program because I needed a frontend for exiftool. Existing
+solutions did not satisfy my needs.
+
+FotoPreProcessor is distributed in the hope that it will help other people with
+similar problems. In the end --after you have approved exiftool execution-- this
+program will alter your images!
+
+So please be cautious! I seek perfection, but I cannot verify the program's
+behaviour due to the overwhelming number of possible platform configurations.
+
+Having a (preferably read-only) backup of your raw footage is generally a good
+idea before starting to process your images.
+
+--------------------------------------------------------------------------------
+Description
+--------------------------------------------------------------------------------
+
+This program displays images found in a directory and allows metadata editing.
+
+Orientation:         Modify the EXIF tag, no image data will be altered.
+
+GeoTagging:          Set latitude, longitude, elevation; it is also possible to use
+                     OpenStreetMap for Geo browsing.
+
+Timezone Correction: Shift timestamp from camera timezone to local time.
+                     My camera is set to UTC, so I only need to know where
+                     a foto was taken to get the correct time -- without
+                     DST confusion. A UTC timestamp will be written to the
+                     GPS timestamp, regardless of any GeoTagging.
+
+Keywords:            Assign/modify keywords/tags. Every keyword will be stored
+                     in a UTF-8 text file and will be used for word completion.
+                     This shall assure that one uses a uniform set of keywords.
+
+Copyright Notice:    Modify the image's copyright tag. I don't mind if other
+                     people use images I took+published. Publish is the magic
+                     word, because in that case I want other people to see it.
+                     But at least I want to be mentioned as creator.
+
+Filename:            When the changes are applied, the filename is set to
+                        YYYYMMDD-HHMMSS[-i]-CameraModel.EXT
+                     Local time is used, and an optional index i is added if
+                     images have the same timestamp.
+
+After editing, the user can choose to apply the changes that were made. The
+program will present the exiftool commands that will be neccessary, so that the
+user is able to abort the process.
+
+--------------------------------------------------------------------------------
+Requirements
+--------------------------------------------------------------------------------
+
+Which programs and libraries are needed?
+(In parantheses: versions this program was created/tested with)
+
+Python   (2.7)
+pytz     (2012c)
+exiftool (8.900.0)
+PyQt4    (4.9.1)
+file     (5.11)
+
+--------------------------------------------------------------------------------
+Installation
+--------------------------------------------------------------------------------
+
+Extract the archive FotoPreProcessor.tar.gz to a directory accessible/writable
+by your user, e.g. to ~/programs:
+
+mkdir -p ~/programs
+tar -xvzf FotoPreProcessor.tar.gz -C ~/programs
+
+A directory "FotoPreProcessor" will be created, e.g. ~/programs/FotoPreProcessor
+
+Inside this directory there will be an executable named FotoPreProcessor.py.
+
+This initial version is not designed to integrate into the LSB and expects both
+exiftool and file to reside in the directory /usr/bin. I will add an appropriate
+installation routine and a settings dialog in the future...
+
+--------------------------------------------------------------------------------
+Files
+--------------------------------------------------------------------------------
+
+FotoPreProcessor.py           main program
+FotoPreProcessorItem.py       custom PyQt4.QtGui.QListWidgetItem
+FotoPreProcessorTools.py      classes for GeoTagging, timezone correction etc.
+FotoPreProcessorWidgets.py    custom widgets: docks and dialogs
+FotoPreProcessorOSM.html      custom OpenStreetMap webpage
+FotoPreProcessor.exiftool     definition of a special FPPModel tag for exiftool
+Makefile                      Makefile for translation and packaging tasks
+i18n/FotoPreProcessor.de.qm   binary translation information
+i18n/FotoPreProcessor.de.ts   translation source file
+icons/Marker2.png             icon "marker" to mark a location
+icons/changed.png             icon "wrench" to mark changed images
+icons/unknownPicture2.png     icon "unknown picture"
+COPYING                       GPL v3 license text
+README                        (this file)
+checksums.md5                 MD-5 checksums
+checksums.sha512              SHA-512 checksums
+
+--------------------------------------------------------------------------------
+Changelog
+--------------------------------------------------------------------------------
+
+2012-08-10: initial release as "works for me" version
+
