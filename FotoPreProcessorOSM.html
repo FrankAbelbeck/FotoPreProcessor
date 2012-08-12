@@ -1,0 +1,143 @@
+<!DOCTYPE HTML>
+
+<!--
+FotoPreProcessorOSM.html: display OpenStreetMap, provide interface for FPP
+Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+
+This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+Own work, based on information from the following sources:
+	http://wiki.openstreetmap.org/wiki/OpenLayers_Simple_Example
+	http://dev.openlayers.org/apidocs/files/OpenLayers-js.html
+
+$Id$
+-->
+
+<html>
+	<head>
+		<title>FotoPreProcessor: Geolocation</title>
+		<style type="text/css">
+			html, body, #basicMap {
+				width:    100%;
+				height:   100%;
+				margin:   0;
+			}
+		</style>
+		<script src="http://www.openlayers.org/api/OpenLayers.js"></script>
+		<script>
+			var map = null;
+			
+			OpenLayers.Control.Click = OpenLayers.Class(OpenLayers.Control, {                
+				defaultHandlerOptions: {
+					'single': true,
+					'double': false,
+					'pixelTolerance': 0,
+					'stopSingle': false,
+					'stopDouble': false
+				},
+				initialize: function(options) {
+					this.handlerOptions = OpenLayers.Util.extend(
+						{}, this.defaultHandlerOptions
+					);
+					OpenLayers.Control.prototype.initialize.apply(
+						this, arguments
+					); 
+					this.handler = new OpenLayers.Handler.Click(
+						this, {
+							'click': this.trigger
+						}, this.handlerOptions
+					);
+				}, 
+				trigger: function(e) {
+					var position = map.getLonLatFromPixel(e.xy)
+							.transform(
+								new OpenLayers.Projection("EPSG:900913"), // transform from Spherical Mercator Projection
+								new OpenLayers.Projection("EPSG:4326") // to WGS 1984
+							);
+					setMarker(position.lat,position.lon);
+				}
+			});
+			
+			function setMarker(lat,lon) {
+				var position = new OpenLayers.LonLat(lon,lat)
+					.transform(
+						new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+						new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
+					);
+ 				try {
+					spin_latitude.setValue(lat.toFixed(8));
+					spin_longitude.setValue(lon.toFixed(8));
+ 				} catch (exception) {}
+				var size = new OpenLayers.Size(64,64);
+				var offset = new OpenLayers.Pixel(-(size.w/2), -(size.h/2));
+				var icon = new OpenLayers.Icon('icons/Marker2.png', size, offset);   
+				var markerslayer = map.getLayer('Markers');
+				try {
+					var markers = markerslayer.markers
+					for (i=0;i<markers.length;i++) {
+						markerslayer.removeMarker(markers[i]);
+					}
+				} catch (exception) {}
+				markerslayer.addMarker(new OpenLayers.Marker(position,icon));
+				centerOnMarker();
+			}
+			
+			function centerOnMarker() {
+				try {
+					map.setCenter(
+						map.getLayer('Markers').markers[0].lonlat,
+						map.getZoom()
+					);
+				} catch (exception) {}
+			}
+			
+			function centerOnLatLon(lat,lon,zoom) {
+				if (zoom == null) { zoom = map.getZoom(); }
+				map.setCenter(
+					new OpenLayers.LonLat(lon,lat)
+						.transform(
+							new OpenLayers.Projection("EPSG:4326"), // transform from WGS 1984
+							new OpenLayers.Projection("EPSG:900913") // to Spherical Mercator Projection
+						), zoom
+				);
+			}
+			
+			function init() {
+				map = new OpenLayers.Map("basicMap",{controls:[]});
+				
+				var osmLayer = new OpenLayers.Layer.OSM();
+				map.addLayer(osmLayer);
+				
+				markers = new OpenLayers.Layer.Markers( "Markers" );
+				markers.id = "Markers";
+				map.addLayer(markers);
+				
+				var click = new OpenLayers.Control.Click();
+				map.addControl(click);
+				click.activate();
+				
+				map.addControl(new OpenLayers.Control.Navigation({'zoomBoxEnabled': true}));
+				map.addControl(new OpenLayers.Control.PanZoomBar());
+				map.addControl(new OpenLayers.Control.ScaleLine());
+				centerOnLatLon(52.374444,9.738611,10) // Center of the map: Hannover, Germany
+			}
+		</script>
+	</head>
+	<body onload="init();">
+		<div id="basicMap" />
+	</body>
+</html>
