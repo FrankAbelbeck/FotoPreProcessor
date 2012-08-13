@@ -18,29 +18,34 @@
 #
 # $Id$
 
-FILES=../FotoPreProcessor/FotoPreProcessor.py \
-../FotoPreProcessor/FotoPreProcessorItem.py \
-../FotoPreProcessor/FotoPreProcessorTools.py \
-../FotoPreProcessor/FotoPreProcessorWidgets.py \
-../FotoPreProcessor/FotoPreProcessorOSM.html \
-../FotoPreProcessor/FotoPreProcessor.exiftool \
-../FotoPreProcessor/Makefile \
-../FotoPreProcessor/i18n/FotoPreProcessor.de.qm \
-../FotoPreProcessor/i18n/FotoPreProcessor.de.ts \
-../FotoPreProcessor/icons/Marker2.png \
-../FotoPreProcessor/icons/changed.png \
-../FotoPreProcessor/icons/unknownPicture2.png \
-../FotoPreProcessor/COPYING \
-../FotoPreProcessor/README
+FILES = FotoPreProcessor.py \
+FotoPreProcessorItem.py \
+FotoPreProcessorTools.py \
+FotoPreProcessorWidgets.py \
+FotoPreProcessorOSM.html \
+FotoPreProcessor.exiftool \
+Makefile \
+i18n/FotoPreProcessor.de.qm \
+i18n/FotoPreProcessor.de.ts \
+icons/Marker2.png \
+icons/changed.png \
+icons/unknownPicture2.png \
+COPYING \
+README
+
+REVISION_CMD = /usr/bin/svnversion -n . | /bin/sed -e 's/^[0-9]*:\([0-9]*\).*/\1/'
+REVISION = FotoPreProcessor-rev$(shell printf "%05i" $(shell $(REVISION_CMD)))
 
 .PHONY : translation_de
 translation_de:
 	@/usr/bin/pylupdate4 -noobsolete FotoPreProcessor*.py -ts i18n/FotoPreProcessor.de.ts
 	@/usr/bin/linguist i18n/FotoPreProcessor.de.ts
 
-
 tarball:
-	@/usr/bin/sha512sum $(FILES) > ../FotoPreProcessor/checksums.sha512
-	@/usr/bin/md5sum $(FILES) > ../FotoPreProcessor/checksums.md5
-	@/bin/tar -cvzf FotoPreProcessor-rev"$(shell /usr/bin/svnversion -n .)".tar.gz $(FILES) ../FotoPreProcessor/checksums.md5 ../FotoPreProcessor/checksums.sha512
+	@/usr/bin/sha512sum $(FILES) > checksums.sha512
+	@/usr/bin/md5sum $(FILES) > checksums.md5
+	@/bin/tar -cvzf "$(REVISION).tar.gz" --transform 's,^,$(REVISION)/,' $(FILES) checksums.md5 checksums.sha512 
+ 	@/usr/bin/gpg -b --use-agent "$(REVISION).tar.gz"
+	@/bin/chmod 644 "$(REVISION).tar.gz" "$(REVISION).tar.gz.sig"
+	@/usr/bin/scp "$(REVISION).tar.gz" "$(REVISION).tar.gz" abelbeck@download.savannah.gnu.org:releases/fotopreprocessor/
 
