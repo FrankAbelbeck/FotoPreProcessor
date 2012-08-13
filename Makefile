@@ -33,7 +33,6 @@ FILES=../FotoPreProcessor/FotoPreProcessor.py \
 ../FotoPreProcessor/COPYING \
 ../FotoPreProcessor/README
 
-
 .PHONY : translation_de
 translation_de:
 	@/usr/bin/pylupdate4 -noobsolete FotoPreProcessor*.py -ts i18n/FotoPreProcessor.de.ts
@@ -41,8 +40,7 @@ translation_de:
 
 
 tarball:
-	@/usr/bin/sha512sum ${FILES} > ../FotoPreProcessor/checksums.sha512
-	@/usr/bin/md5sum ${FILES} > ../FotoPreProcessor/checksums.md5
-	@/bin/tar -cvzf FotoPreProcessor.tar.gz ${FILES} ../FotoPreProcessor/checksums.md5 ../FotoPreProcessor/checksums.sha512
-
+	@/usr/bin/sha512sum $(FILES) > ../FotoPreProcessor/checksums.sha512
+	@/usr/bin/md5sum $(FILES) > ../FotoPreProcessor/checksums.md5
+	@/bin/tar -cvzf FotoPreProcessor-rev"$(shell /usr/bin/svnversion -n .)".tar.gz $(FILES) ../FotoPreProcessor/checksums.md5 ../FotoPreProcessor/checksums.sha512
 
