@@ -33,8 +33,8 @@ icons/unknownPicture2.png \
 COPYING \
 README
 
-REVISION_CMD = /usr/bin/svnversion -n . | /bin/sed -e 's/^[0-9]*:\([0-9]*\).*/\1/'
-REVISION = FotoPreProcessor-rev$(shell printf "%05i" $(shell $(REVISION_CMD)))
+REVISION = $(shell /usr/bin/svnversion -n . | /bin/cut -d ':' -f 2)
+TARBALL = FotoPreProcessor-rev$(shell printf "%05i" $(REVISION))
 
 .PHONY : translation_de
 translation_de:
@@ -42,10 +42,10 @@ translation_de:
 	@/usr/bin/linguist i18n/FotoPreProcessor.de.ts
 
 tarball:
-	@/usr/bin/sha512sum $(FILES) > checksums.sha512
-	@/usr/bin/md5sum $(FILES) > checksums.md5
-	@/bin/tar -cvzf "$(REVISION).tar.gz" --transform 's,^,$(REVISION)/,' $(FILES) checksums.md5 checksums.sha512 
- 	@/usr/bin/gpg -b --use-agent "$(REVISION).tar.gz"
-	@/bin/chmod 644 "$(REVISION).tar.gz" "$(REVISION).tar.gz.sig"
-	@/usr/bin/scp "$(REVISION).tar.gz" "$(REVISION).tar.gz" abelbeck@download.savannah.gnu.org:releases/fotopreprocessor/
+	/usr/bin/sha512sum $(FILES) > checksums.sha512
+	/usr/bin/md5sum $(FILES) > checksums.md5
+	/bin/tar -cvzf $(TARBALL).tar.gz --transform 's,^,$(TARBALL)/,' $(FILES) checksums.md5 checksums.sha512 
+ 	/usr/bin/gpg -b --use-agent $(TARBALL).tar.gz
+	/bin/chmod 644 $(TARBALL).tar.gz $(TARBALL).tar.gz.sig
+	/usr/bin/scp $(TARBALL).tar.gz $(TARBALL).tar.gz.sig abelbeck@download.savannah.gnu.org:releases/fotopreprocessor/
 
