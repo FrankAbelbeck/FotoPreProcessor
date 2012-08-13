@@ -45,7 +45,6 @@ tarball:
 	/usr/bin/sha512sum $(FILES) > checksums.sha512
 	/usr/bin/md5sum $(FILES) > checksums.md5
 	/bin/tar -cvzf $(TARBALL).tar.gz --transform 's,^,$(TARBALL)/,' $(FILES) checksums.md5 checksums.sha512 
- 	/usr/bin/gpg -b --use-agent $(TARBALL).tar.gz
+	/usr/bin/gpg -b --use-agent $(TARBALL).tar.gz
 	/bin/chmod 644 $(TARBALL).tar.gz $(TARBALL).tar.gz.sig
-	/usr/bin/scp $(TARBALL).tar.gz $(TARBALL).tar.gz.sig abelbeck@download.savannah.gnu.org:releases/fotopreprocessor/
 
