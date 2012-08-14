@@ -466,13 +466,15 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def updateImageList(self):
 		self.list_images.clear()
 		
+		
 		try:
-			filelist = [os.path.join(self.str_path,i) for i in os.listdir(self.str_path)]
 			pathlist = list()
-			for fileresult in subprocess.check_output([u"/usr/bin/file",u"-iN"]+filelist).splitlines():
-				if u": image/" in fileresult:
-					pathlist.append(fileresult.split(": image/")[0])
-			pathlist.sort()
+			filelist = [os.path.join(self.str_path,i) for i in os.listdir(self.str_path)]
+			if len(filelist) > 0:
+				for fileresult in subprocess.check_output([u"/usr/bin/file",u"-iN"]+filelist).splitlines():
+					if u": image/" in fileresult:
+						pathlist.append(fileresult.split(": image/")[0])
+				pathlist.sort()
 		except:
 			pathlist = list()
 		
