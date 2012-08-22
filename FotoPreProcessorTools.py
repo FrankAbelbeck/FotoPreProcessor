@@ -47,13 +47,20 @@ The files has to contain tab-delimited information on timezones:
 two-letter country-code, coordinates, timezone name
 
 Coordinates are expected as latitude longitude pairs of sign-degrees-minutes
-(+DDMM+DDDMM) or sign-degrees-minutes-seconds (+DDMMSS+DDDMMSS)."""
+(+DDMM+DDDMM) or sign-degrees-minutes-seconds (+DDMMSS+DDDMMSS).
+
+If filename is not provided, /usr/share/zoneinfo/zone.tab will be used. If this
+file is not available, FPP will try its one version of that file."""
 		t_normal = datetime.datetime(2012,1,1,12,0,0)
 		t_summer = datetime.datetime(2012,6,1,12,0,0)
 		self.dct_timezones.clear()
 		self.dct_timezone_offsets.clear()
 		lst_tzname = list()
-		with open(u"/usr/share/zoneinfo/zone.tab",u"r") as f:
+		
+		if not os.path.isfile(filename):
+			filename = os.path.join(sys.path[0],u"zone.tab")
+		
+		with open(filename,u"r") as f:
 			for line in f:
 				if not line.startswith(u"#"):
 					data = line.strip().split(u"\t")
@@ -93,6 +100,7 @@ Coordinates are expected as latitude longitude pairs of sign-degrees-minutes
 						(int(t_s[0:3])*60+int(t_s[3:5]))
 					)
 					lst_tzname.append(tzname)
+		
 		lst_tzname.sort()
 		lst_tzname.insert(0,u"UTC")
 		self.dct_timezones[u"UTC"] = (51.477678,0.0) # http://en.wikipedia.org/wiki/World_Geodetic_System
@@ -145,7 +153,8 @@ Returns None if no timezone name is found."""
 class FPPGeoBookmarks:
 	"""Class for the management of simple location bookmarks.
 
-Bookmarks are stored in plain-text UTF-8 encoded files.
+Bookmarks are stored in plain-text UTF-8 encoded files. In Addition, import from
+and export to a list/tuple is supported to allow interaction with QSettings.
 
 Each line of such a file contains latitude, longitude and bookmark name,
 delimited by simple spaces. Example line:
@@ -159,6 +168,11 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 		self.dct_locations = dict()
 		self.str_filename = unicode()
 		self.bool_changed = False
+	
+	def wasChanged(self):
+		"""Return True if the database object was modified."""
+		return self.bool_changed
+	
 	
 	def loadFile(self,filename=None):
 		"""Load and process given file and populate the internal bookmark database."""
@@ -176,6 +190,26 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 			self.bool_changed = False
 		except:
 			pass
+	
+	
+	def loadList(self,bookmarks=tuple()):
+		"""Populate internal bookmark database using given list.
+
+bookmarks is expected to be a tuple or list of unicode strings. Each string
+should consist of latitude, longitude and bookmark name separated by blanks:
+
+0.00000 0.00000 Point in the Atlantic Ocean
+"""
+		try:    bookmarks = tuple(bookmarks)
+		except: bookmarks = tuple()
+		
+		self.dct_locations.clear()
+		for bookmark in bookmarks:
+			try:
+				(lat,lon,name) = bookmark.strip().split(u" ",2)
+				self.dct_locations[unicode(name)] = (float(lat),float(lon))
+			except:
+				pass
 	
 	
 	def names(self):
@@ -223,6 +257,13 @@ Existing bookmarks will be overwritten."""
 			self.dct_locations[unicode(name)] = (float(latitude),float(longitude))
 	
 	
+	def deleteLocation(self,name=None):
+		try:
+			self.dct_locations.pop(unicode(name))
+		except:
+			pass
+	
+	
 	def saveFile(self,filename=None,force=False):
 		"""Save current bookmark database in a file with given name.
 
@@ -246,17 +287,21 @@ class FPPGeoTaggingDialog(QtGui.QDialog):
 	"""Class for an OpenStreetMap-based geotagging dialog based on QtGui.QDialog.
 
 Relies on a custom "FotoPreProcessorOSM.html" file for OpenStreetMap interaction
-and allows to load and store location bookmarks in "FotoPreProcessor.locations"."""
+and allows to load and store location bookmarks in the application's settings."""
 	
 	def __init__(self,parent=None):
 		"""Constructor; initialise fields, load bookmarks and construct GUI."""
 		QtGui.QDialog.__init__(self,parent)
 		
+		settings = QtCore.QSettings()
+		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		
 		# load timezone info and bookmarks
 		self.tz = FPPTimezone()
 		self.tz.loadTimezoneDB()
 		self.bookmarks = FPPGeoBookmarks()
-		self.bookmarks.loadFile(os.path.join(sys.path[0],u"FotoPreProcessor.locations"))
+		try:    self.bookmarks.loadList([unicode(i) for i in settings.value(u"LocationBookmarks",list()).toStringList()])
+		except: pass
 		
 		# prepare progressbar (webpage loading progress) and webview
 		self.progressbar = QtGui.QProgressBar()
@@ -385,7 +430,7 @@ and allows to load and store location bookmarks in "FotoPreProcessor.locations".
 		self.connect(
 			self,
 			QtCore.SIGNAL('finished(int)'),
-			self.writeLocationsToFile
+			self.writeLocationsToSettings
 		)
 		self.connect(
 			self.button_add,
@@ -449,7 +494,6 @@ and allows to load and store location bookmarks in "FotoPreProcessor.locations".
 					# receiving the setMarker command; therefore
 					# it is repeated after loading has finished;
 					# thanks to try-except this does no harm
-		# catch ok=False? (i.e. page not properly loaded)
 	
 	
 	def setLocation(self,latitude=None,longitude=None,elevation=None):
@@ -517,6 +561,7 @@ This opens a dialog to let the user either choose or type in a new name."""
 		"""Delete all currently selected location bookmarks."""
 		for item in self.list_locations.selectedItems():
 			self.list_locations.takeItem(self.list_locations.row(item))
+			self.bookmarks.deleteLocation(item.text())
 	
 	
 	def selectionChanged(self):
@@ -593,9 +638,16 @@ Sets latitude and longitude and places a marker."""
 			pass
 	
 	
-	def writeLocationsToFile(self,result):
-		"""Save locations to the file "FotoPreProcessor.locations"."""
-		self.bookmarks.saveFile()
+	def writeLocationsToSettings(self):
+		"""Save locations to the application settings."""
+		if self.bookmarks.wasChanged:
+			settings = QtCore.QSettings()
+			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			bookmarks = list()
+			for name,(latitude,longitude) in self.bookmarks.listLocations():
+				bookmarks.append(u"{0} {1} {2}".format(latitude,longitude,name))
+			if len(bookmarks) == 1: bookmarks = bookmarks[0]
+			settings.setValue(u"LocationBookmarks",bookmarks)
 
 
 
@@ -603,13 +655,20 @@ class FPPStringDB:
 	"""Class for the management of simple text database files.
 
 Strings are stored in plain-text UTF-8 encoded files,
-with each string on a separate line."""
+with each string on a separate line.
+
+In addition, a plain list export was added to enable interaction with QSettings."""
 	
 	def __init__(self):
 		"""Constructor; initialise fields."""
 		self.set_database = set()
 		self.str_filename = unicode()
 		self.bool_changed = False
+	
+	
+	def wasChanged(self):
+		"""Return True if the database object was modified."""
+		return self.bool_changed
 	
 	
 	def loadFile(self,filename=None):
@@ -625,6 +684,16 @@ with each string on a separate line."""
 				pass
 			self.str_filename = filename
 			self.bool_changed = False
+	
+	
+	def loadList(self,list_strings=list()):
+		"""Populate internal bookmark database using given list.
+
+list_strings is expected to be a tuple or list of unicode strings."""
+		try:    list_strings = tuple(list_strings)
+		except: list_strings = tuple()
+		self.set_database.clear()
+		for item in list_strings: self.set_database.add(unicode(item.strip()))
 	
 	
 	def strings(self):

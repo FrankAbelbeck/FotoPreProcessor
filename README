@@ -142,3 +142,14 @@ Changelog
 
 2012-08-10: initial release as "works for me" version
 
+2012-08-22: introduction of an icon for FPP,
+            improved command line parsing,
+            implementation of the settings dialog,
+            usage of QSettings for configuration parameters and databases,
+            handling of initial configuration,
+            handling of wrong program paths (disabling features if neccessary)
+            implementation of about dialogs,
+            improved image import algorithm,
+            improved event handling and dialog response during import/export,
+            local zoneinfo table as fallback (removes zoneinfo dependency),
+            elimination of quirks/bugs

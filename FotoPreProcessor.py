@@ -45,13 +45,79 @@ class FPPMainWindow(QtGui.QMainWindow):
 			u"128x128": QtCore.QSize(128,128),
 			u"160x160": QtCore.QSize(160,160)
 		}
-		self.ustr_path_exiftool = u"/usr/bin/exiftool"
-		self.ustr_path_gimp = u"/usr/bin/gimp"
-		self.int_stepsize = 4
-		self.int_readsize = 1024
-		self.ustr_path = unicode()
-		self.setupGUI()
-		self.updateImageList()
+		settings = QtCore.QSettings()
+		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		#
+		# read settings
+		#
+		if settings.value(u"ConfigureAtStartup",True).toBool() == True:
+			# this seems to be the first time FPP is run: configure...
+			dlg = FotoPreProcessorWidgets.FPPSettingsDialog()
+			if dlg.exec_() == QtGui.QDialog.Accepted:
+				settings.setValue(u"ConfigureAtStartup",False)
+				self.bool_ready = True
+			else:
+				# not properly configured -> display warning message
+				answer = QtGui.QMessageBox.critical(
+					self,
+					QtCore.QCoreApplication.translate(u"Dialog",u"Initial Configuration Cancelled"),
+					QtCore.QCoreApplication.translate(u"Dialog",u"The program was not properly configured and thus is terminated."),
+					QtGui.QMessageBox.Ok
+				)
+				self.bool_ready = False
+		else:
+			self.bool_ready = True
+		
+		if self.bool_ready:
+			# executing third-party programs is always a security nightmare...
+			# but in a multi-platform application it is not feasible to check
+			# all possible versions of The Gimp and Exiftool...
+			#
+			# therefore it is just checked that the executables are regular
+			# files; let's hope the user knows what he does...
+			self.ustr_path_exiftool = self.sanitiseExecutable(
+				unicode(settings.value(u"ExiftoolPath",u"/usr/bin/exiftool").toString())
+			)
+			self.ustr_path_gimp = self.sanitiseExecutable(
+				unicode(settings.value(u"TheGimpPath",u"/usr/bin/gimp").toString())
+			)
+			
+			(self.int_stepsize,ok) = settings.value(u"StepSize",4).toInt()
+			if not ok: self.int_stepsize = 4
+			
+			(self.int_readsize,ok) = settings.value(u"ReadSize",1024).toInt()
+			if not ok: self.int_readsize = 1024
+			
+			(self.float_readdelay,ok) = settings.value(u"ReadDelay",0.0001).toFloat()
+			if not ok: self.float_readdelay = 0.0001
+			
+			#
+			# write settings back; this way we get a basic config file at first start
+			#
+			settings.setValue(u"ExiftoolPath",self.ustr_path_exiftool)
+			settings.setValue(u"TheGimpPath",self.ustr_path_gimp)
+			settings.setValue(u"StepSize",self.int_stepsize)
+			settings.setValue(u"ReadSize",self.int_readsize)
+			
+			self.ustr_path = unicode()
+			
+			self.setupGUI()
+			self.updateImageList()
+	
+	
+	def sanitiseExecutable(self,path=unicode()):
+		returnPath = unicode()
+		path = unicode(path)
+		try:
+			if os.path.isfile(path) and os.access(path,os.X_OK):
+				returnPath = path
+		except:
+			pass
+		return returnPath
+	
+	
+	def isReady(self):
+		return self.bool_ready
 	
 	
 	def setupGUI(self):
@@ -59,7 +125,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		#---------------------------------------------------------------
 		
-		action_openDir = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Open directory..."),self)
+		self.action_openDir = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Open directory..."),self)
 		self.action_apply = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Apply changes..."),self)
 		action_quit = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Quit"),self)
 		self.action_rotateLeft = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Rotate left"),self)
@@ -74,7 +140,6 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_resetAll = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Reset everything"),self)
 		
 		action_config = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Configure FPP..."),self)
-		action_config.setEnabled(False)
 		
 		self.action_sortByName = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Sort by filename"),self)
 		self.action_sortByTime = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"Sort by timestamp"),self)
@@ -84,14 +149,20 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_sortByCamera.setCheckable(True)
 		self.action_sortByName.setChecked(True)
 		
+		action_about = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"About FotoPreProcessor..."),self)
+		action_aboutQt = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"About Qt..."),self)
+		
 		self.action_rotateLeft.setShortcut(QtGui.QKeySequence(u"l"))
 		self.action_rotateRight.setShortcut(QtGui.QKeySequence(u"r"))
 		self.action_locationLookUp.setShortcut(QtGui.QKeySequence(u"g"))
 		self.action_openGimp.setShortcut(QtGui.QKeySequence(u"c"))
 		self.action_resetOrientation.setShortcut(QtGui.QKeySequence(u"n"))
 		action_quit.setShortcut(QtGui.QKeySequence(u"Ctrl+Q"))
-		action_openDir.setShortcut(QtGui.QKeySequence(u"Ctrl+O"))
+		self.action_openDir.setShortcut(QtGui.QKeySequence(u"Ctrl+O"))
 		self.action_apply.setShortcut(QtGui.QKeySequence(u"Ctrl+S"))
+		
+		self.action_openGimp.setEnabled(len(self.ustr_path_gimp) > 0)
+		self.action_openDir.setEnabled(len(self.ustr_path_exiftool) > 0)
 		
 		#---------------------------------------------------------------
 		
@@ -124,7 +195,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		#---------------------------------------------------------------
 		
 		menu_file = self.menuBar().addMenu(QtCore.QCoreApplication.translate(u"Menu",u"&File"))
-		menu_file.addAction(action_openDir)
+		menu_file.addAction(self.action_openDir)
 		menu_file.addSeparator()
 		menu_file.addAction(self.action_apply)
 		menu_file.addSeparator()
@@ -179,6 +250,10 @@ class FPPMainWindow(QtGui.QMainWindow):
 		menu_sorting.addAction(self.action_sortByTime)
 		menu_sorting.addAction(self.action_sortByCamera)
 		
+		menu_help = self.menuBar().addMenu(QtCore.QCoreApplication.translate(u"Menu",u"&Help"))
+		menu_help.addAction(action_about)
+		menu_help.addAction(action_aboutQt)
+		
 		#---------------------------------------------------------------
 		# wiring: connect widgets to functions (signals to slots)
 		#---------------------------------------------------------------
@@ -207,7 +282,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.applyChanges
 		)
 		self.connect(
-			action_openDir,
+			self.action_openDir,
 			QtCore.SIGNAL('triggered()'),
 			self.selectDirectory
 		)
@@ -369,6 +444,19 @@ class FPPMainWindow(QtGui.QMainWindow):
 		)
 		
 		#---------------------------------------------------------------
+		
+		self.connect(
+			action_about,
+			QtCore.SIGNAL('triggered()'),
+			self.aboutDialog
+		)
+		self.connect(
+			action_aboutQt,
+			QtCore.SIGNAL('triggered()'),
+			self.aboutQtDialog
+		)
+		
+		#---------------------------------------------------------------
 		# construct main window
 		#---------------------------------------------------------------
 		self.setCentralWidget(self.list_images)
@@ -380,7 +468,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea,self.dock_copyright)
 		
 		self.setWindowTitle(QtCore.QCoreApplication.translate(u"MainWindow",u"FotoPreProcessor"))
-		#self.setWindowIcon(self.icon_tpgui)
+		self.setWindowIcon(QtGui.QIcon(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"FPP.png")))
+		
 		self.setStyleSheet(u":disabled { color: gray; }")
 		self.show()
 	
@@ -418,7 +507,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	def setDirectory(self,path=unicode()):
 		path = unicode(path)
-		if os.path.isdir(path):
+		if os.path.isdir(path) and len(self.ustr_path_exiftool) > 0:
 			self.ustr_path = path
 			self.setWindowTitle(
 				QtCore.QCoreApplication.translate(
@@ -426,8 +515,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 					u"FotoPreProcessor"
 				) + u": " + path
 			)
-			self.updateImageList()
 		else:
+			# either path does not exist or Exiftool is not defined
 			# delete list, reset path and title...
 			self.ustr_path = unicode()
 			self.setWindowTitle(
@@ -436,7 +525,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 					u"FotoPreProcessor"
 				)
 			)
-			self.list_images.clear()
+		self.updateImageList()
 	
 	
 	def adjustIconSize(self,action):
@@ -488,235 +577,239 @@ class FPPMainWindow(QtGui.QMainWindow):
 		l_filelist = len(filelist)
 		progress.setRange(0,l_filelist)
 		
-		proc_exiftool = subprocess.Popen([
-			self.ustr_path_exiftool,
-			u"-stay_open",u"True",
-			u"-@",u"-",
-			u"-common_args",
-			u"-X",
-			u"-b",
-			u"-m",
-			u"-if",
-			u"$MIMEType =~ /^image/",
-			u"-d",
-			u"%Y %m %d %H %M %S",
-			u"-Orientation",
-			u"-DateTimeOriginal",
-			u"-Keywords",
-			u"-FocalLength#",
-			u"-ScaleFactor35efl",
-			u"-Aperture",
-			u"-ShutterSpeed",
-			u"-ISO",
-			u"-Model",
-			u"-LensType",
-			u"-ThumbnailImageValidArea",
-			u"-Copyright",
-			u"-GPS:GPSLatitude#",
-			u"-GPS:GPSLatitudeRef#",
-			u"-GPS:GPSLongitude#",
-			u"-GPS:GPSLongitudeRef#",
-			u"-GPS:GPSAltitude#",
-			u"-GPS:GPSAltitudeRef#",
-			u"-ThumbnailImage"
-		],stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE)
-		
-		l_filelist = len(filelist)
-		for i in xrange(0,l_filelist,self.int_stepsize):
-			#
-			# read self.int_stepsize images at once and process output
-			#
-			command = u"\n".join(filelist[i:i+self.int_stepsize]) + u"\n-execute\n"
-			proc_exiftool.stdin.write(command.encode("UTF-8"))
-			proc_exiftool.stdin.flush()
+		if l_filelist > 0 and len(self.ustr_path_exiftool) > 0:
+			proc_exiftool = subprocess.Popen([
+				self.ustr_path_exiftool,
+				u"-stay_open",u"True",
+				u"-@",u"-",
+				u"-common_args",
+				u"-X",
+				u"-b",
+				u"-m",
+				u"-if",
+				u"$MIMEType =~ /^image/",
+				u"-d",
+				u"%Y %m %d %H %M %S",
+				u"-Orientation",
+				u"-DateTimeOriginal",
+				u"-Keywords",
+				u"-FocalLength#",
+				u"-ScaleFactor35efl",
+				u"-Aperture",
+				u"-ShutterSpeed",
+				u"-ISO",
+				u"-Model",
+				u"-LensType",
+				u"-ThumbnailImageValidArea",
+				u"-Copyright",
+				u"-GPS:GPSLatitude#",
+				u"-GPS:GPSLatitudeRef#",
+				u"-GPS:GPSLongitude#",
+				u"-GPS:GPSLongitudeRef#",
+				u"-GPS:GPSAltitude#",
+				u"-GPS:GPSAltitudeRef#",
+				u"-ThumbnailImage"
+			],stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE)
 			
-			# os.read is needed for stdout/stderr "file" objects...
-			# in addition, exiftool output ends with {ready}, so we have to catch it
-			f_stdout = proc_exiftool.stdout.fileno()
-			str_output = ""
-			while not str_output[-64:].strip().endswith('{ready}'):
-				# read until {ready} occurs
-				str_output += os.read(f_stdout,self.int_readsize).decode(sys.stdout.encoding)
-			str_output = str_output.strip()[:-7]
-			
-			try:    descriptionElements = xml.dom.minidom.parseString(str_output.encode("utf-8")).getElementsByTagName("rdf:Description")
-			except: descriptionElements = tuple()
-			
-			k_max = len(descriptionElements)
-			for k,description in enumerate(descriptionElements):
+			for i in xrange(0,l_filelist,self.int_stepsize):
 				#
-				# process every identified image
+				# read self.int_stepsize images at once and process output
 				#
-				filepath = unicode(description.getAttribute("rdf:about"))
+				command = u"\n".join(filelist[i:i+self.int_stepsize]) + u"\n-execute\n"
+				proc_exiftool.stdin.write(command.encode("UTF-8"))
+				proc_exiftool.stdin.flush()
 				
-				if len(filepath) == 0: continue
-				if progress.wasCanceled(): break
+				# os.read is needed for stdout/stderr "file" objects...
+				# in addition, exiftool output ends with {ready}, so we have to catch it
+				f_stdout = proc_exiftool.stdout.fileno()
+				str_output = str()
+				while not str_output[-64:].strip().endswith('{ready}'):
+					# read until {ready} occurs
+					str_output += os.read(f_stdout,self.int_readsize).decode(sys.stdout.encoding)
+				QtCore.QCoreApplication.processEvents()
+				str_output = str_output.strip()[:-7]
 				
-				filename = os.path.basename(filepath)
+				try:    descriptionElements = xml.dom.minidom.parseString(str_output.encode("utf-8")).getElementsByTagName("rdf:Description")
+				except: descriptionElements = tuple()
 				
-				progress.setValue(progress.value()+1)
-				progress.setLabelText(u"{0} {1}...".format(
-					QtCore.QCoreApplication.translate(u"Dialog",u"Processing Image"),
-					filename
-				))
-				time.sleep(0.00001) # make cancel button responsive...?
-				
-				timestamp    = unicode()
-				focalLength  = unicode()
-				cropFactor   = unicode()
-				aperture     = unicode()
-				shutterSpeed = unicode()
-				isoValue     = unicode()
-				cameraModel  = unicode()
-				lensType     = unicode()
-				thumbArea    = unicode()
-				latitude     = unicode()
-				latitudeRef  = unicode()
-				longitude    = unicode()
-				longitudeRef = unicode()
-				elevation    = unicode()
-				elevationRef = unicode()
-				thumbData    = unicode()
-				
-				item = FotoPreProcessorItem.FPPGalleryItem(self.list_images)
-				item.setFilename(filename)
-				
-				for node in description.childNodes:
+				k_max = len(descriptionElements)
+				for k,description in enumerate(descriptionElements):
 					#
-					# process nodes of the XML structure
+					# process every identified image
 					#
-					if node.nodeType != node.ELEMENT_NODE: continue
-					if node.localName == "Orientation":
-						item.setOrientation(self.getFirstTextChild(node))
-					elif node.localName == "DateTimeOriginal":
-						timestamp = self.getFirstTextChild(node)
-					elif node.localName == "Keywords":
-						keywords = list()
+					filepath = unicode(description.getAttribute("rdf:about"))
+					
+					if len(filepath) == 0: continue
+					if progress.wasCanceled(): break
+					
+					filename = os.path.basename(filepath)
+					
+					progress.setValue(progress.value()+1)
+					progress.setLabelText(u"{0} {1}...".format(
+						QtCore.QCoreApplication.translate(u"Dialog",u"Processing Image"),
+						filename
+					))
+					
+					timestamp    = unicode()
+					focalLength  = unicode()
+					cropFactor   = unicode()
+					aperture     = unicode()
+					shutterSpeed = unicode()
+					isoValue     = unicode()
+					cameraModel  = unicode()
+					lensType     = unicode()
+					thumbArea    = unicode()
+					latitude     = unicode()
+					latitudeRef  = unicode()
+					longitude    = unicode()
+					longitudeRef = unicode()
+					elevation    = unicode()
+					elevationRef = unicode()
+					thumbData    = unicode()
+					
+					item = FotoPreProcessorItem.FPPGalleryItem(self.list_images)
+					item.setFilename(filename)
+					
+					for node in description.childNodes:
+						#
+						# process nodes of the XML structure
+						#
+						if node.nodeType != node.ELEMENT_NODE: continue
+						if node.localName == "Orientation":
+							item.setOrientation(self.getFirstTextChild(node))
+						elif node.localName == "DateTimeOriginal":
+							timestamp = self.getFirstTextChild(node)
+						elif node.localName == "Keywords":
+							keywords = list()
+							rdfBag = node.getElementsByTagName("rdf:Bag")
+							if len(rdfBag) > 0:
+								# more than one keyword: stored as RDF bag,
+								# i.e. there is at least one rdf:Bag tag...
+								for bagItem in rdfBag[0].getElementsByTagName("rdf:li"):
+									keywords.append(self.getFirstTextChild(bagItem))
+							else:
+								# single keyword is stored as simple cdata
+								keywords.append(self.getFirstTextChild(node))
+							item.setKeywords(keywords)
+						elif node.localName == "FocalLength":
+							focalLength = self.getFirstTextChild(node)
+						elif node.localName == "ScaleFactor35efl":
+							cropFactor = self.getFirstTextChild(node)
+						elif node.localName == "Aperture":
+							aperture = self.getFirstTextChild(node)
+						elif node.localName == "ShutterSpeed":
+							shutterSpeed = self.getFirstTextChild(node)
+						elif node.localName == "ISO":
+							isoValue = self.getFirstTextChild(node)
+						elif node.localName == "Model":
+							cameraModel = self.getFirstTextChild(node)
+						elif node.localName == "LensType":
+							lensType = self.getFirstTextChild(node)
+						elif node.localName == "ThumbnailImageValidArea":
+							thumbArea = self.getFirstTextChild(node)
+						elif node.localName == "Copyright":
+							cr = self.getFirstTextChild(node)
+							try:    cr = re.match(r'^(©|\(C\)|\(c\)|Copyright \(C\)|Copyright \(c\)|Copyright ©) [0-9-]* (.*)',cr).groups()[1]
+							except: pass
+							item.setCopyright(cr)
+						elif node.localName == "GPSLatitude":
+							latitude = self.getFirstTextChild(node)
+						elif node.localName == "GPSLatitudeRef":
+							latitudeRef = self.getFirstTextChild(node)
+						elif node.localName == "GPSLongitude":
+							longitude = self.getFirstTextChild(node)
+						elif node.localName == "GPSLongitudeRef":
+							longitudeRef = self.getFirstTextChild(node)
+						elif node.localName == "GPSAltitude":
+							elevation = self.getFirstTextChild(node)
+						elif node.localName == "GPSAltitudeRef":
+							elevationRef = self.getFirstTextChild(node)
+						elif node.localName == "ThumbnailImage":
+							thumbData = base64.b64decode(self.getFirstTextChild(node))
+					
+					thumbImage = QtGui.QPixmap()
+					if not thumbImage.loadFromData(thumbData):
 						try:
-							for bagItem in node.getElementsByTagName("rdf:Bag")[0].getElementsByTagName("rdf:li"):
-								keywords.append(self.getFirstTextChild(bagItem))
+							thumbImage = QtGui.QPixmap(filepath)
+							thumbImage.scaled(QtCore.QSize(160,160),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)
+						except:
+							thumbImage = QtGui.QPixmap(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"unknownPicture2.png"))
+					else:
+						try:
+							(x1,x2,y1,y2) = tuple(thumbArea.split(u" "))
+							thumbRect = QtCore.QRect()
+							thumbRect.setTop(int(y1))
+							thumbRect.setBottom(int(y2))
+							thumbRect.setLeft(int(x1))
+							thumbRect.setRight(int(x2))
+							thumbImage = thumbImage.copy(thumbRect)
 						except:
 							pass
-						item.setKeywords(keywords)
-					elif node.localName == "FocalLength":
-						focalLength = self.getFirstTextChild(node)
-					elif node.localName == "ScaleFactor35efl":
-						cropFactor = self.getFirstTextChild(node)
-					elif node.localName == "Aperture":
-						aperture = self.getFirstTextChild(node)
-					elif node.localName == "ShutterSpeed":
-						shutterSpeed = self.getFirstTextChild(node)
-					elif node.localName == "ISO":
-						isoValue = self.getFirstTextChild(node)
-					elif node.localName == "Model":
-						cameraModel = self.getFirstTextChild(node)
-					elif node.localName == "LensType":
-						lensType = self.getFirstTextChild(node)
-					elif node.localName == "ThumbnailImageValidArea":
-						thumbArea = self.getFirstTextChild(node)
-					elif node.localName == "Copyright":
-						cr = self.getFirstTextChild(node)
-						try:    cr = re.match(r'^(©|\(C\)|\(c\)) \d{4} (.*)',cr).groups()[1]
-						except: pass
-						item.setCopyright(cr)
-					elif node.localName == "GPSLatitude":
-						latitude = self.getFirstTextChild(node)
-					elif node.localName == "GPSLatitudeRef":
-						latitudeRef = self.getFirstTextChild(node)
-					elif node.localName == "GPSLongitude":
-						longitude = self.getFirstTextChild(node)
-					elif node.localName == "GPSLongitudeRef":
-						longitudeRef = self.getFirstTextChild(node)
-					elif node.localName == "GPSAltitude":
-						elevation = self.getFirstTextChild(node)
-					elif node.localName == "GPSAltitudeRef":
-						elevationRef = self.getFirstTextChild(node)
-					elif node.localName == "ThumbnailImage":
-						thumbData = base64.b64decode(self.getFirstTextChild(node))
+					item.setThumbnail(thumbImage)
+					
+					if len(timestamp) == 0:
+						# no EXIF timestamp , so obtain timestamp from filesystem
+						timestamp = time.strftime(
+							u"%Y %m %d %H %M %S",
+							time.localtime(os.path.getctime(filepath))
+						)
+					try:    item.setTimestamp(timestamp.split(u" "))
+					except: pass
 				
-				thumbImage = QtGui.QPixmap()
-				if not thumbImage.loadFromData(thumbData):
+					settings = []
+					if len(focalLength) != 0:
+						try:
+							settings.append(u"{0} mm ({1})".format(
+								int(float(focalLength) * float(cropFactor)),
+								QtCore.QCoreApplication.translate(u"ItemToolTip",u"on full-frame")
+							))
+						except:
+							settings.append(u"{0} ({1})".format(
+								focalLength,
+								QtCore.QCoreApplication.translate(u"ItemToolTip",u"physical")
+							))
+					if len(aperture) != 0:
+						settings.append(u"f/" + aperture)
+					if len(shutterSpeed) != 0:
+						settings.append(shutterSpeed + u" s")
+					if len(isoValue) != 0:
+						settings.append(u"ISO " + isoValue)
+					if len(settings) != 0:
+						item.setCameraSettings(u", ".join(settings))
+					
+					settings = []
+					if len(cameraModel) > 0 and not cameraModel.startswith(u"Unknown"):
+						settings.append(cameraModel)
+					if len(lensType) > 0 and not lensType.startswith(u"Unknown"):
+						settings.append(lensType)
+					if len(settings) != 0:
+						item.setCameraHardware(u", ".join(settings))
+					
 					try:
-						thumbImage = QtGui.QPixmap(filepath)
-						thumbImage.scaled(QtCore.QSize(160,160),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)
-					except:
-						thumbImage = QtGui.QPixmap(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"unknownPicture2.png"))
-				else:
-					try:
-						(x1,x2,y1,y2) = tuple(thumbArea.split(u" "))
-						thumbRect = QtCore.QRect()
-						thumbRect.setTop(int(y1))
-						thumbRect.setBottom(int(y2))
-						thumbRect.setLeft(int(x1))
-						thumbRect.setRight(int(x2))
-						thumbImage = thumbImage.copy(thumbRect)
+						latitude = float(latitude)
+						longitude = float(longitude)
+						if latitudeRef == u"S": latitude = -latitude
+						if longitudeRef == u"W": longitude = -longitude
+						try:    elevation = float(elevation)
+						except: elevation = 0.0
+						if elevationRef == u"1": elevation = -elevation
+						item.setLocation(latitude,longitude,elevation)
 					except:
 						pass
-				item.setThumbnail(thumbImage)
-				
-				if len(timestamp) == 0:
-					# no EXIF timestamp , so obtain timestamp from filesystem
-					timestamp = time.strftime(
-						u"%Y %m %d %H %M %S",
-						time.localtime(os.path.getctime(filepath))
-					)
-				try:    item.setTimestamp(timestamp.split(u" "))
-				except: pass
+					
+					item.setSortCriterion(sortCriterion)
+					item.saveState()
+					#
+					# end of image package processing
+					#
+				if progress.wasCanceled(): break
+				#
+				# end of file processing
+				#
 			
-				settings = []
-				if len(focalLength) != 0:
-					try:
-						settings.append(u"{0} mm ({1})".format(
-							int(float(focalLength) * float(cropFactor)),
-							QtCore.QCoreApplication.translate(u"ItemToolTip",u"on full-frame")
-						))
-					except:
-						settings.append(u"{0} ({1})".format(
-							focalLength,
-							QtCore.QCoreApplication.translate(u"ItemToolTip",u"physical")
-						))
-				if len(aperture) != 0:
-					settings.append(u"f/" + aperture)
-				if len(shutterSpeed) != 0:
-					settings.append(shutterSpeed + u" s")
-				if len(isoValue) != 0:
-					settings.append(u"ISO " + isoValue)
-				if len(settings) != 0:
-					item.setCameraSettings(u", ".join(settings))
-				
-				settings = []
-				if len(cameraModel) > 0 and not cameraModel.startswith(u"Unknown"):
-					settings.append(cameraModel)
-				if len(lensType) > 0 and not lensType.startswith(u"Unknown"):
-					settings.append(lensType)
-				if len(settings) != 0:
-					item.setCameraHardware(u", ".join(settings))
-				
-				try:
-					latitude = float(latitude)
-					longitude = float(longitude)
-					if latitudeRef == u"S": latitude = -latitude
-					if longitudeRef == u"W": longitude = -longitude
-					try:    elevation = float(elevation)
-					except: elevation = 0.0
-					if elevationRef == u"1": elevation = -elevation
-					item.setLocation(latitude,longitude,elevation)
-				except:
-					pass
-				
-				item.setSortCriterion(sortCriterion)
-				item.saveState()
-				#
-				# end of image package processing
-				#
-			if progress.wasCanceled(): break
-			#
-			# end of file processing
-			#
-		
-		# terminate exiftool
-		proc_exiftool.communicate("-stay_open\nFalse\n")
-		
+			# terminate exiftool
+			proc_exiftool.communicate("-stay_open\nFalse\n")
+			
 		if progress.wasCanceled():
 			self.list_images.clear()
 		else:
@@ -746,7 +839,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			if self.list_images.item(i).edited():
 				edited = True
 				break
-		self.action_apply.setEnabled(edited)
+		self.action_apply.setEnabled(edited and len(self.ustr_path_exiftool) > 0)
 	
 	
 	def listImagesSelectionChanged(self):
@@ -916,7 +1009,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.dock_copyright.setCopyright(copyrightNotice)
 			self.dock_copyright.setResetEnabled(copyrightEdited)
 			
-			self.action_openGimp.setEnabled(True)
+			self.action_openGimp.setEnabled(len(self.ustr_path_gimp) > 0)
 			
 			self.action_resetAll.setEnabled(orientationEdited or locationEdited or timezonesEdited or keywordsEdited)
 			self.action_resetOrientation.setEnabled(orientationEdited)
@@ -1196,44 +1289,164 @@ class FPPMainWindow(QtGui.QMainWindow):
 	#-----------------------------------------------------------------------
 	
 	def configureProgram(self):
-		pass
+		dlg = FotoPreProcessorWidgets.FPPSettingsDialog()
+		if dlg.exec_() == QtGui.QDialog.Accepted:
+			# Settings dialog modified QSettings -> load new parameters
+			# no checking is needed because the user confirmed the changes
+			settings = QtCore.QSettings()
+			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			
+			self.ustr_path_exiftool = self.sanitiseExecutable(
+				unicode(settings.value(u"ExiftoolPath",u"/usr/bin/exiftool").toString())
+			)
+			self.ustr_path_gimp = self.sanitiseExecutable(
+				unicode(settings.value(u"TheGimpPath",u"/usr/bin/gimp").toString())
+			)
+			self.action_openGimp.setEnabled(len(self.ustr_path_gimp) > 0)
+			self.action_openDir.setEnabled(len(self.ustr_path_exiftool) > 0)
+			self.action_apply.setEnabled(self.action_apply.isEnabled() and len(self.ustr_path_exiftool) > 0)
+			
+			(self.int_stepsize,ok) = settings.value(u"StepSize",4).toInt()
+			if not ok: self.int_stepsize = 4
+			
+			(self.int_readsize,ok) = settings.value(u"ReadSize",1024).toInt()
+			if not ok: self.int_readsize = 1024
+	
+			(self.float_readdelay,ok) = settings.value(u"ReadDelay",0.0001).toFloat()
+			if not ok: self.float_readdelay = 0.0001
+	
+	#-----------------------------------------------------------------------
+	
+	def aboutDialog(self):
+		dlg = FotoPreProcessorWidgets.FPPAboutDialog()
+		dlg.exec_()
+
+	
+	def aboutQtDialog(self):
+		QtGui.QMessageBox.aboutQt(self)
+
+
+
+def parseArguments(set_args=set()):
+	bool_help = True
+	bool_license = True
+	bool_version = True
+	
+	# check if help was requested; if yes, display help and exit without error
+	try:
+		set_args.remove(u"-h")
+	except:
+			try:
+				set_args.remove(u"--help")
+			except:
+				bool_help = False
+	if bool_help:
+		print app.translate(u"CLI",u"""Usage: %1 [-h][-l][-v][DIR]
+
+PyQt4-based (EXIF) metadata management of images in a directory.
+
+Optional arguments:
+   DIR             directory that should be opened at start
+   -h, --help      show this help message and exit
+   -l, --license   show full license notice and exit
+   -v, --version   show version information and exit
+
+Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+
+This program comes with ABSOLUTELY NO WARRANTY. It is free software,
+and you are welcome to redistribute it under certain conditions
+(see argument --license for details).
+""").arg(os.path.basename(path_self))
+
+	# check if license was requested; if yes, display license and exit without error
+	try:
+		set_args.remove(u"-l")
+	except:
+			try:
+				set_args.remove(u"--license")
+			except:
+				bool_license = False
+	if bool_license:
+		print app.translate(u"CLI",u"License information:")
+		with codecs.open(qargs[0],"r") as f:
+			for i in xrange(0,4): f.readline() # skip first four lines
+			for line in f:
+				if not line.startswith(u"$Id"): # read until version id encountered
+					print line.strip()
+				else:
+					break
+	
+	# check if version was requested; if yes, display version and exit without error
+	try:
+		set_args.remove(u"-v")
+	except:
+			try:
+				set_args.remove(u"--version")
+			except:
+				bool_version = False
+	if bool_version:
+		int_revision = 0
+		for filename in (u"FotoPreProcessor.py",u"FotoPreProcessorItem.py",u"FotoPreProcessorTools.py",u"FotoPreProcessorWidgets.py"):
+			with codecs.open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),filename),u"r") as f:
+				for line in f:
+					if line.startswith("$Id"):
+						rev = int(re.match(r'^\$Id:\ .*\ (\d+)\ .*',line).groups()[0])
+						if rev > int_revision: int_revision = rev
+		print app.translate(u"CLI",u"SVN revision: %1").arg(unicode(int_revision))
+	
+	return bool_help or bool_license or bool_version,set_args
 
 
 
 if __name__ == '__main__':
-	try:
-		argpath = sys.argv[1].decode(sys.stdin.encoding)
-		argpath = unicode(os.path.expanduser(argpath))
-		if not os.path.isabs(argpath):
-			argpath = unicode(os.path.join(os.getcwd().decode(sys.getfilesystemencoding()),argpath))
-		argpath = unicode(os.path.normpath(argpath))
-	except:
-		argpath = unicode()
-	
-	# setup Qt application
+	# setup Qt application and pass commandline arguments
 	app = QtGui.QApplication(sys.argv)
-	app.setApplicationName(u"FotoPreProcessor")
 	
-	# initialise translation service
-	system_locale = unicode(QtCore.QLocale.system().name()[0:2])
+	# obtain command line arguments, filtered by QApplication
+	qargs = [unicode(i) for i in app.arguments()]
+	path_self = qargs[0]
 	
-	qtTranslator = QtCore.QTranslator()
-	qtTranslator.load(
-		u"qt_"+system_locale,
-		unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath))
-	)
-	
-	fppTranslator = QtCore.QTranslator()
-	fppTranslator.load(
-		u"FotoPreProcessor."+system_locale,
-		os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"i18n")
-	)
-	
-	app.installTranslator(qtTranslator)
-	app.installTranslator(fppTranslator)
-	
-	# create main window and start event loop
-	mainwindow = FPPMainWindow()
-	mainwindow.setDirectory(argpath)
-	app.exec_()
+	bool_stop,set_args = parseArguments(set(qargs[1:]))
+	if not bool_stop:
+		# argument parsing returned False, i.e.no information was requested
+		# via CLI, and therefore GUI is allowed to start:
+		
+		# initialise application information used by settings
+		app.setApplicationName(u"FotoPreProcessor")
+		app.setOrganizationName("Abelbeck");
+		app.setOrganizationDomain("abelbeck.wordpress.com");
+		
+		# initialise translation service
+		system_locale = unicode(QtCore.QLocale.system().name()[0:2])
+		qtTranslator = QtCore.QTranslator()
+		qtTranslator.load(
+			u"qt_"+system_locale,
+			unicode(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath))
+		)
+		
+		fppTranslator = QtCore.QTranslator()
+		fppTranslator.load(
+			u"FotoPreProcessor."+system_locale,
+			os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"i18n")
+		)
+		app.installTranslator(qtTranslator)
+		app.installTranslator(fppTranslator)
+		
+		# create main window and set directory from remaining arguments
+		mainwindow = FPPMainWindow()
+		if mainwindow.isReady():
+			for argpath in set_args:
+				try:
+					os.path.expanduser(argpath)
+					if not os.path.isabs(argpath):
+						argpath = unicode(os.path.join(os.getcwd().decode(sys.getfilesystemencoding()),argpath))
+					argpath = unicode(os.path.normpath(argpath))
+					if os.path.isdir(argpath):
+						mainwindow.setDirectory(argpath)
+						break
+				except:
+					pass
+			
+			# start event loop, i.e. start application
+			app.exec_()
 
