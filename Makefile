@@ -27,11 +27,13 @@ FotoPreProcessor.exiftool \
 Makefile \
 i18n/FotoPreProcessor.de.qm \
 i18n/FotoPreProcessor.de.ts \
+icons/FPP.png \
 icons/Marker2.png \
 icons/changed.png \
 icons/unknownPicture2.png \
 COPYING \
-README
+README \
+zone.tab
 
 REVISION = $(shell /usr/bin/svnversion -n . | /bin/cut -d ':' -f 2)
 TARBALL = FotoPreProcessor-rev$(shell printf "%05i" $(REVISION))

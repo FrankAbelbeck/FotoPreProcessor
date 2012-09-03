@@ -44,9 +44,9 @@ Attributes: Delete on close"""
 		#
 		# setup GUI
 		#
-		self.button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Look-Up..."))
+		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Look-Up..."))
 		box_stdButtons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Reset)
-		box_stdButtons.addButton(self.button_lookUp,QtGui.QDialogButtonBox.ActionRole)
+		box_stdButtons.addButton(button_lookUp,QtGui.QDialogButtonBox.ActionRole)
 		self.button_reset = box_stdButtons.button(QtGui.QDialogButtonBox.Reset)
 		
 		self.spinbox_latitude = QtGui.QDoubleSpinBox()
@@ -101,7 +101,7 @@ Attributes: Delete on close"""
 		self.setWidget(widget)
 		
 		self.connect(
-			self.button_lookUp,
+			button_lookUp,
 			QtCore.SIGNAL('clicked()'),
 			self.lookUpCoordinates
 		)
@@ -147,10 +147,8 @@ Attributes: Delete on close"""
 		latitude  = self.spinbox_latitude.value()
 		longitude = self.spinbox_longitude.value()
 		elevation = self.spinbox_elevation.value()
-		if latitude == self.spinbox_latitude.minimum():
-			latitude = None
-		if longitude == self.spinbox_longitude.minimum():
-			longitude = None
+		if latitude <= self.spinbox_latitude.minimum():   latitude = None
+		if longitude <= self.spinbox_longitude.minimum(): longitude = None
 		return (latitude,longitude,elevation)
 	
 
@@ -761,6 +759,9 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.spinbox_longitude.setWrapping(True)
 		self.spinbox_longitude.setKeyboardTracking(False)
 		
+		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Look-Up..."))
+		button_lookUp.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.MinimumExpanding)
+		
 		box_stdButtons = QtGui.QDialogButtonBox(
 			QtGui.QDialogButtonBox.Ok | QtGui.QDialogButtonBox.Cancel | QtGui.QDialogButtonBox.Reset
 		)
@@ -803,9 +804,12 @@ class FPPSettingsDialog(QtGui.QDialog):
 		#-----------------------------------------------------------------------
 		
 		group_geotag = QtGui.QGroupBox(QtCore.QCoreApplication.translate(u"Dialog",u"GeoTagging"))
-		layout_geotag = QtGui.QFormLayout()
-		layout_geotag.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default latitude:"),self.spinbox_latitude)
-		layout_geotag.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default longitude:"),self.spinbox_longitude)
+		layout_coords = QtGui.QFormLayout()
+		layout_coords.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default latitude:"),self.spinbox_latitude)
+		layout_coords.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default longitude:"),self.spinbox_longitude)
+		layout_geotag = QtGui.QHBoxLayout()
+		layout_geotag.addLayout(layout_coords)
+		layout_geotag.addWidget(button_lookUp)
 		group_geotag.setLayout(layout_geotag)
 		
 		#-----------------------------------------------------------------------
@@ -835,6 +839,11 @@ class FPPSettingsDialog(QtGui.QDialog):
 			self.button_reset,
 			QtCore.SIGNAL('clicked()'),
 			self.resetValues
+		)
+		self.connect(
+			button_lookUp,
+			QtCore.SIGNAL('clicked()'),
+			self.lookUpCoordinates
 		)
 		self.connect(
 			self.edit_exiftool,
@@ -977,6 +986,32 @@ class FPPSettingsDialog(QtGui.QDialog):
 		(value,ok) = self.settings.value(u"DefaultLongitude",9.738611).toFloat()
 		if not ok: value = 9.738611
 		self.button_reset.setEnabled( self.spinbox_longitude.value() != value )
+	
+	
+	def lookUpCoordinates(self):
+		latitude = self.spinbox_latitude.value()
+		longitude = self.spinbox_longitude.value()
+		
+		if latitude <= self.spinbox_latitude.minimum():   latitude = None
+		if longitude <= self.spinbox_longitude.minimum(): longitude = None
+		
+		dlg = FotoPreProcessorTools.FPPGeoTaggingDialog()
+		
+		if latitude != None and longitude != None:
+			dlg.setLocation(latitude,longitude,0.0)
+		else:
+			dlg.setLocation(52.374444,9.738611,0.0)
+		
+		if dlg.exec_() == QtGui.QDialog.Accepted:
+			try:
+				(latitude,longitude,elevation) = dlg.location()
+				latitude = float(latitude)
+				longitude = float(longitude)
+			except:
+				latitude = self.spinbox_latitude.minimum()
+				longitude = self.spinbox_longitude.minimum()
+			self.spinbox_latitude.setValue(latitude)
+			self.spinbox_longitude.setValue(longitude)
 
 
 

@@ -25,6 +25,8 @@ $Id$
 # copyright notice and filename.
 #
 # 2012-08-10: initial release as "works for me" version
+# ...
+# 2012-09-03: last fixes for enhanced version
 
 import sys,os,subprocess,time,pytz,datetime,codecs,xml.dom.minidom,base64,re
 
@@ -91,6 +93,18 @@ class FPPMainWindow(QtGui.QMainWindow):
 			(self.float_readdelay,ok) = settings.value(u"ReadDelay",0.0001).toFloat()
 			if not ok: self.float_readdelay = 0.0001
 			
+			# load miscellaneous settings
+			self.ustr_iconsize = unicode(settings.value(u"IconSize",u"128x128").toString())
+			
+			(self.int_sorting,ok) = settings.value(u"SortCriterion",FotoPreProcessorItem.FPPGalleryItem.SortByName).toInt()
+			if not ok: self.int_sorting = FotoPreProcessorItem.FPPGalleryItem.SortByName
+			
+			try:
+				self.size_window = settings.value(u"WindowSize",QtCore.QSize(640,480)).toSize()
+				if not self.size_window.isValid(): raise
+			except:
+				self.size_window = QtCore.QSize(640,480)
+			
 			#
 			# write settings back; this way we get a basic config file at first start
 			#
@@ -98,6 +112,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 			settings.setValue(u"TheGimpPath",self.ustr_path_gimp)
 			settings.setValue(u"StepSize",self.int_stepsize)
 			settings.setValue(u"ReadSize",self.int_readsize)
+			settings.setValue(u"IconSize",self.ustr_iconsize)
+			settings.setValue(u"SortCriterion",self.int_sorting)
+			settings.setValue(u"WindowSize",self.size_window)
 			
 			self.ustr_path = unicode()
 			
@@ -147,7 +164,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_sortByName.setCheckable(True)
 		self.action_sortByTime.setCheckable(True)
 		self.action_sortByCamera.setCheckable(True)
-		self.action_sortByName.setChecked(True)
+		self.action_sortByName.setChecked(self.int_sorting == FotoPreProcessorItem.FPPGalleryItem.SortByName)
+		self.action_sortByTime.setChecked(self.int_sorting == FotoPreProcessorItem.FPPGalleryItem.SortByTime)
+		self.action_sortByCamera.setChecked(self.int_sorting == FotoPreProcessorItem.FPPGalleryItem.SortByCamera)
 		
 		action_about = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"About FotoPreProcessor..."),self)
 		action_aboutQt = QtGui.QAction(QtCore.QCoreApplication.translate(u"Menu",u"About Qt..."),self)
@@ -238,7 +257,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		for size in sizes:
 			action_iconSize = QtGui.QAction(size,self)
 			action_iconSize.setCheckable(True)
-			action_iconSize.setChecked(size == u"128x128")
+			action_iconSize.setChecked(size == self.ustr_iconsize)
 			actiongroup_iconSize.addAction(action_iconSize)
 			menu_iconSize.addAction(action_iconSize)
 		
@@ -460,7 +479,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		# construct main window
 		#---------------------------------------------------------------
 		self.setCentralWidget(self.list_images)
-		#self.resize(640,400)
+		self.resize(self.size_window)
 		
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea,self.dock_geotagging)
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea,self.dock_timezones)
@@ -475,7 +494,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	
 	def closeEvent(self,event):
-		"""Window received close event: toggles visibility (ie close to tray)."""
+		"""Window received close event: save state."""
 		edited = False
 		for i in xrange(0,self.list_images.count()):
 			if self.list_images.item(i).edited():
@@ -492,6 +511,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 				self.applyChanges()
 		self.dock_copyright.close() # i.e.: save copyright DB
 		self.dock_keywords.close()  # i.e.: save keywords DB
+		# save miscellaneous settings
+		settings = QtCore.QSettings()
+		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		settings.setValue(u"IconSize",self.ustr_iconsize)
+		settings.setValue(u"SortCriterion",self.int_sorting)
+		settings.setValue(u"WindowSize",self.size())
 		event.accept()
 	
 	
@@ -529,21 +554,22 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	
 	def adjustIconSize(self,action):
-		self.list_images.setIconSize(self.dct_iconsize[unicode(action.text())])
+		self.ustr_iconsize = unicode(action.text())
+		self.list_images.setIconSize(self.dct_iconsize[self.ustr_iconsize])
 		for i in xrange(0,self.list_images.count()):
 			self.list_images.item(i).updateIcon()
 	
 	
 	def setSortCriterion(self,action):
 		if action == self.action_sortByTime:
-			sortCriterion = FotoPreProcessorItem.FPPGalleryItem.SortByTime
+			self.int_sorting = FotoPreProcessorItem.FPPGalleryItem.SortByTime
 		elif action == self.action_sortByCamera:
-			sortCriterion = FotoPreProcessorItem.FPPGalleryItem.SortByCamera
+			self.int_sorting = FotoPreProcessorItem.FPPGalleryItem.SortByCamera
 		else:
-			sortCriterion = FotoPreProcessorItem.FPPGalleryItem.SortByName
+			self.int_sorting = FotoPreProcessorItem.FPPGalleryItem.SortByName
 		
 		for i in xrange(0,self.list_images.count()):
-			self.list_images.item(i).setSortCriterion(sortCriterion)
+			self.list_images.item(i).setSortCriterion(self.int_sorting)
 		self.list_images.sortItems()
 	
 	
@@ -1225,7 +1251,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 						parameters.append(u"-Keywords={0}".format(keyword))
 				
 				if item.copyrightEdited():
-					parameters.append(u"-Copyright=(C) {0} {1}".format(
+					parameters.append(u"-Copyright=Copyright (C) {0} {1}".format(
 						item.shiftedTimestamp().strftime("%Y"),
 						item.copyright()
 					))
