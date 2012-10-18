@@ -29,7 +29,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2012-08-10
+Version: 2012-10-18
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -153,3 +153,9 @@ Changelog
             improved event handling and dialog response during import/export,
             local zoneinfo table as fallback (removes zoneinfo dependency),
             elimination of quirks/bugs
+
+2012-10-18: bugfixes (icon size preferences are correctly applied;
+            slashes in camera name string are ignored during renaming),
+            improvements (flickering during image list update got reduced;
+            if a dock gets disabled while selecting multiple images it stays
+            disabled until the selection is reset)

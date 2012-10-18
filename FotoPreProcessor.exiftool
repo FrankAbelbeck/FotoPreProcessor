@@ -21,7 +21,7 @@
 		FPPModel => {
 			Require => 'Model',
 			# translate spaces to underscores
-			ValueConv => '$val =~ s{Canon }{}; $val =~ tr/ //d; $val',
+			ValueConv => '$val =~ s{Canon }{}; $val =~ tr/ \///d; $val',
 		},
 	},
 );

@@ -241,7 +241,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		menu_settings = self.menuBar().addMenu(QtCore.QCoreApplication.translate(u"Menu",u"&Settings"))
 		menu_docks = menu_settings.addMenu(QtCore.QCoreApplication.translate(u"Menu",u"Dockable windows"))
-		menu_iconSize = menu_settings.addMenu(QtCore.QCoreApplication.translate(u"Menu",u"Icon size"))
+		self.menu_iconSize = menu_settings.addMenu(QtCore.QCoreApplication.translate(u"Menu",u"Icon size"))
 		menu_sorting = menu_settings.addMenu(QtCore.QCoreApplication.translate(u"Menu",u"Sort criterion"))
 		menu_settings.addSeparator()
 		menu_settings.addAction(action_config)
@@ -259,7 +259,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			action_iconSize.setCheckable(True)
 			action_iconSize.setChecked(size == self.ustr_iconsize)
 			actiongroup_iconSize.addAction(action_iconSize)
-			menu_iconSize.addAction(action_iconSize)
+			self.menu_iconSize.addAction(action_iconSize)
 		
 		actiongroup_sorting = QtGui.QActionGroup(self)
 		actiongroup_sorting.addAction(self.action_sortByName)
@@ -306,7 +306,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.selectDirectory
 		)
 		self.connect(
-			menu_iconSize,
+			self.menu_iconSize,
 			QtCore.SIGNAL('triggered(QAction*)'),
 			self.adjustIconSize
 		)
@@ -553,8 +553,14 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.updateImageList()
 	
 	
-	def adjustIconSize(self,action):
-		self.ustr_iconsize = unicode(action.text())
+	def adjustIconSize(self,action=None):
+		if action == None:
+			actions = self.menu_iconSize.actions()
+			for action in actions:
+				self.ustr_iconsize = unicode(action.text())
+				if action.isChecked(): break
+		else:
+			self.ustr_iconsize = unicode(action.text())
 		self.list_images.setIconSize(self.dct_iconsize[self.ustr_iconsize])
 		for i in xrange(0,self.list_images.count()):
 			self.list_images.item(i).updateIcon()
@@ -597,7 +603,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 		elif self.action_sortByCamera.isChecked():
 			sortCriterion = FotoPreProcessorItem.FPPGalleryItem.SortByCamera
 		
-		try:    filelist = [os.path.join(self.ustr_path,i.decode(sys.getfilesystemencoding())) for i in os.listdir(self.ustr_path)]
+		# 2012-10-17, bug: program is stalled when a directory is part of the filelist
+		# solution: scan filelist and remove all non-regular files
+		try:    filelist = [os.path.join(self.ustr_path,i.decode(sys.getfilesystemencoding())) for i in os.listdir(self.ustr_path) if os.path.isfile(os.path.join(self.ustr_path,i.decode(sys.getfilesystemencoding())))]
 		except: filelist = list()
 		
 		l_filelist = len(filelist)
@@ -659,6 +667,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 				except: descriptionElements = tuple()
 				
 				k_max = len(descriptionElements)
+				
+				self.list_images.setUpdatesEnabled(False)
+				
 				for k,description in enumerate(descriptionElements):
 					#
 					# process every identified image
@@ -825,9 +836,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 					
 					item.setSortCriterion(sortCriterion)
 					item.saveState()
+					
 					#
 					# end of image package processing
 					#
+					self.list_images.setUpdatesEnabled(True)
+					
 				if progress.wasCanceled(): break
 				#
 				# end of file processing
@@ -840,6 +854,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.list_images.clear()
 		else:
 			self.list_images.sortItems()
+			self.adjustIconSize()
 		
 		progress.close()
 		
@@ -897,39 +912,46 @@ class FPPMainWindow(QtGui.QMainWindow):
 			l_copyright = len(copyright)
 			
 			# import location data or resolve location conflicts
-			self.dock_geotagging.setEnabled(True)
-			self.action_locationLookUp.setEnabled(True)
 			latitude,longitude,elevation = None,None,None
+			enabled_geo = self.dock_geotagging.isEnabled()
 			if l_location == 1:
-				try:    (latitude,longitude,elevation) = location.pop()
-				except: pass
-			elif l_location > 1:
-				answer = QtGui.QMessageBox.question(
-					self,
-					QtCore.QCoreApplication.translate(u"Dialog",u"Location Collision"),
-					QtCore.QCoreApplication.translate(u"Dialog",u"The selected images are tagged with different locations.\nDo you want to reset them?\nIf you answer \"No\", GeoTagging will be disabled."),
-					QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
-				)
-				if answer == QtGui.QMessageBox.Yes:
-					locationEdited = False
-					for item in items:
-						item.setLocation(None,None,None)
-						locationEdited = locationEdited or item.locationEdited()
-				else:
-					self.dock_geotagging.setEnabled(False)
-					self.action_locationLookUp.setEnabled(False)
+				try:
+					(latitude,longitude,elevation) = location.pop()
+					enabled_geo = True
+				except:
+					pass
+			elif l_location > 1 and enabled_geo:
+					answer = QtGui.QMessageBox.question(
+						self,
+						QtCore.QCoreApplication.translate(u"Dialog",u"Location Collision"),
+						QtCore.QCoreApplication.translate(u"Dialog",u"The selected images are tagged with different locations.\nDo you want to reset them?\nIf you answer \"No\", GeoTagging will be disabled."),
+						QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+					)
+					if answer == QtGui.QMessageBox.Yes:
+						locationEdited = False
+						for item in items:
+							item.setLocation(None,None,None)
+							locationEdited = locationEdited or item.locationEdited()
+						enabled_geo = True
+					else:
+						enabled_geo = False
 			
+			self.dock_geotagging.setEnabled(enabled_geo)
+			self.action_locationLookUp.setEnabled(enabled_geo)
 			self.dock_geotagging.setLocation(latitude,longitude,elevation)
 			self.dock_timezones.setLocation(latitude,longitude)
 			self.dock_geotagging.setResetEnabled(locationEdited)
 			
 			# import timezone corrections or resolve conflicts
-			self.dock_timezones.setEnabled(True)
+			enabled_tz = self.dock_timezones.isEnabled()
 			fromTz,toTz = u"UTC",u"UTC"
 			if l_timezones == 1:
-				try:    (fromTz,toTz) = timezones.pop()
-				except: pass
-			elif l_timezones > 1:
+				try:
+					(fromTz,toTz) = timezones.pop()
+					enabled_tz = True
+				except:
+					pass
+			elif l_timezones > 1 and enabled_tz:
 				lst_timezones = list()
 				timezones.add((u"UTC",u"UTC"))
 				for tz in timezones:
@@ -947,19 +969,25 @@ class FPPMainWindow(QtGui.QMainWindow):
 					for item in items:
 						item.setTimezones(fromTz,toTz)
 						timezonesEdited = timezonesEdited or item.timezonesEdited()
+					enabled_tz = True
 				else:
-					self.dock_timezones.setEnabled(False)
+					enabled_tz = False
+			
+			self.dock_timezones.setEnabled(enabled_tz)
 			self.dock_timezones.setTimezones(fromTz,toTz)
 			self.dock_timezones.setResetEnabled(timezonesEdited)
 			
 			# import keywords or resolve conflicts
-			self.dock_keywords.setEnabled(True)
+			enabled_keywords = self.dock_keywords.isEnabled()
 			self.dock_keywords.setKeywords()
 			tpl_kws = tuple()
 			if l_keywords ==  1:
-				try:    tpl_kws = tuple(keywords.pop())
-				except: pass
-			elif l_keywords > 1:
+				try:
+					tpl_kws = tuple(keywords.pop())
+					enabled_keywords = True
+				except:
+					pass
+			elif l_keywords > 1 and enabled_keywords:
 				str_disable = QtCore.QCoreApplication.translate(u"Dialog",u"Disable keyword settings.")
 				str_empty = QtCore.QCoreApplication.translate(u"Dialog",u"Remove all keywords from all images.")
 				str_union = QtCore.QCoreApplication.translate(u"Dialog",u"Apply union of all keywords to all images.")
@@ -1004,18 +1032,24 @@ class FPPMainWindow(QtGui.QMainWindow):
 						for item in items:
 							item.setKeywords(tpl_kws)
 							keywordsEdited = keywordsEdited or item.keywordsEdited()
+					enabled_keywords = True
 				else:
-					self.dock_keywords.setEnabled(False)
+					enabled_keywords = False
+			
+			self.dock_keywords.setEnabled(enabled_keywords)
 			self.dock_keywords.setKeywords(tpl_kws)
 			self.dock_keywords.setResetEnabled(keywordsEdited)
 			
 			# import copyright data or resolve conflicts
-			self.dock_copyright.setEnabled(True)
+			enabled_copyright = self.dock_copyright.isEnabled()
 			copyrightNotice = unicode()
 			if l_copyright == 1:
-				try:    copyrightNotice = copyright.pop()
-				except: pass
-			elif l_copyright > 1:
+				try:
+					copyrightNotice = copyright.pop()
+					enabled_copyright = True
+				except:
+					pass
+			elif l_copyright > 1 and enabled_copyright:
 				lst_copyright = [u"None (clear copyright notice)"]
 				lst_copyright.extend(list(copyright))
 				(answer,ok) = QtGui.QInputDialog.getItem(self,
@@ -1030,8 +1064,11 @@ class FPPMainWindow(QtGui.QMainWindow):
 					for item in items:
 						item.setCopyright(copyrightNotice)
 						copyrightEdited = copyrightEdited or item.copyrightEdited()
+					enabled_copyright = True
 				else:
-					self.dock_copyright.setEnabled(False)
+					enabled_copyright = False
+			
+			self.dock_copyright.setEnabled(enabled_copyright)
 			self.dock_copyright.setCopyright(copyrightNotice)
 			self.dock_copyright.setResetEnabled(copyrightEdited)
 			
