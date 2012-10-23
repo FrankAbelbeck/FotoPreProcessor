@@ -914,27 +914,27 @@ class FPPMainWindow(QtGui.QMainWindow):
 			# import location data or resolve location conflicts
 			latitude,longitude,elevation = None,None,None
 			enabled_geo = self.dock_geotagging.isEnabled()
-			if l_location == 1:
+			if l_location <= 1:
 				try:
 					(latitude,longitude,elevation) = location.pop()
-					enabled_geo = True
 				except:
 					pass
+				enabled_geo = True
 			elif l_location > 1 and enabled_geo:
-					answer = QtGui.QMessageBox.question(
-						self,
-						QtCore.QCoreApplication.translate(u"Dialog",u"Location Collision"),
-						QtCore.QCoreApplication.translate(u"Dialog",u"The selected images are tagged with different locations.\nDo you want to reset them?\nIf you answer \"No\", GeoTagging will be disabled."),
-						QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
-					)
-					if answer == QtGui.QMessageBox.Yes:
-						locationEdited = False
-						for item in items:
-							item.setLocation(None,None,None)
-							locationEdited = locationEdited or item.locationEdited()
-						enabled_geo = True
-					else:
-						enabled_geo = False
+				answer = QtGui.QMessageBox.question(
+					self,
+					QtCore.QCoreApplication.translate(u"Dialog",u"Location Collision"),
+					QtCore.QCoreApplication.translate(u"Dialog",u"The selected images are tagged with different locations.\nDo you want to reset them?\nIf you answer \"No\", GeoTagging will be disabled."),
+					QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+				)
+				if answer == QtGui.QMessageBox.Yes:
+					locationEdited = False
+					for item in items:
+						item.setLocation(None,None,None)
+						locationEdited = locationEdited or item.locationEdited()
+					enabled_geo = True
+				else:
+					enabled_geo = False
 			
 			self.dock_geotagging.setEnabled(enabled_geo)
 			self.action_locationLookUp.setEnabled(enabled_geo)
@@ -945,12 +945,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 			# import timezone corrections or resolve conflicts
 			enabled_tz = self.dock_timezones.isEnabled()
 			fromTz,toTz = u"UTC",u"UTC"
-			if l_timezones == 1:
+			if l_timezones <= 1:
 				try:
 					(fromTz,toTz) = timezones.pop()
-					enabled_tz = True
 				except:
 					pass
+				enabled_tz = True
 			elif l_timezones > 1 and enabled_tz:
 				lst_timezones = list()
 				timezones.add((u"UTC",u"UTC"))
@@ -981,12 +981,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 			enabled_keywords = self.dock_keywords.isEnabled()
 			self.dock_keywords.setKeywords()
 			tpl_kws = tuple()
-			if l_keywords ==  1:
+			if l_keywords <=  1:
 				try:
 					tpl_kws = tuple(keywords.pop())
-					enabled_keywords = True
 				except:
 					pass
+				enabled_keywords = True
 			elif l_keywords > 1 and enabled_keywords:
 				str_disable = QtCore.QCoreApplication.translate(u"Dialog",u"Disable keyword settings.")
 				str_empty = QtCore.QCoreApplication.translate(u"Dialog",u"Remove all keywords from all images.")
@@ -1043,12 +1043,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 			# import copyright data or resolve conflicts
 			enabled_copyright = self.dock_copyright.isEnabled()
 			copyrightNotice = unicode()
-			if l_copyright == 1:
+			if l_copyright <= 1:
 				try:
 					copyrightNotice = copyright.pop()
-					enabled_copyright = True
 				except:
 					pass
+				enabled_copyright = True
 			elif l_copyright > 1 and enabled_copyright:
 				lst_copyright = [u"None (clear copyright notice)"]
 				lst_copyright.extend(list(copyright))
