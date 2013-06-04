@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorWidgets: custom dock widgets and application/settings dialogs
@@ -568,9 +568,9 @@ Attributes: Delete on close"""
 		try:
 			notice = unicode(notice)
 			if len(notice) > 0:
-				self.edit_copyright.setText(notice)
 				self.DBCopyright.add(notice)
 				self.completer.model().setStringList(self.DBCopyright.strings())
+			self.edit_copyright.setText(notice) # moved to this pos so that it gets in any case
 		except:
 			pass
 	
@@ -737,9 +737,11 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.spinbox_stepsize.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_stepsize.setRange(1,1024)
 		
-		self.spinbox_readsize = QtGui.QSpinBox()
+		self.spinbox_readsize = QtGui.QDoubleSpinBox() # 2013-01-08: due to limits of integer-based spinbox
 		self.spinbox_readsize.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
-		self.spinbox_readsize.setRange(1,10240)
+		self.spinbox_readsize.setRange(1,10**20)
+		self.spinbox_readsize.setDecimals(0) # emulate integer spin box for big ints
+		self.spinbox_readsize.setSingleStep(2**5) # big ints, make step size multiple of 2
 		
 		self.spinbox_latitude = QtGui.QDoubleSpinBox()
 		self.spinbox_latitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessor: manage (EXIF) metadata of images in a directory
@@ -35,6 +35,53 @@ from PyQt4 import QtGui, QtCore
 import FotoPreProcessorWidgets,FotoPreProcessorItem
 
 
+class FPPClickableLabel(QtGui.QLabel):
+	def __init__(self):
+		QtGui.QLabel.__init__(self)
+		self.image = None
+		self.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Ignored)
+		self.setScaledContents(False)
+		self.setAlignment(QtCore.Qt.AlignCenter)
+		self.setBackgroundRole(QtGui.QPalette.Dark)
+	def mousePressEvent(self,event):
+		if event.button() == QtCore.Qt.LeftButton:
+			self.emit(QtCore.SIGNAL("leftClicked()"))
+		elif event.button() == QtCore.Qt.RightButton:
+			self.emit(QtCore.SIGNAL("rightClicked()"))
+	def mouseDoubleClickEvent(self,event):
+		if event.button() == QtCore.Qt.LeftButton:
+			self.emit(QtCore.SIGNAL("leftDoubleClicked()"))
+		elif event.button() == QtCore.Qt.RightButton:
+			self.emit(QtCore.SIGNAL("rightDoubleClicked()"))
+	def updateItem(self,filepath,orientation):
+		QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+		matrix = QtGui.QTransform()
+		if orientation == 2:
+			matrix.scale(-1,1)
+		elif orientation == 3:
+			matrix.rotate(180)
+		elif orientation == 4:
+			matrix.scale(1,-1)
+		elif orientation == 5:
+			matrix.scale(-1,1)
+			matrix.rotate(270)
+		elif orientation == 6:
+			matrix.rotate(90)
+		elif orientation == 7:
+			matrix.scale(1,-1)
+			matrix.rotate(90)
+		elif orientation == 8:
+			matrix.rotate(270)
+		self.image = QtGui.QImage(filepath).transformed(matrix,QtCore.Qt.SmoothTransformation)
+		self.setPixmap(QtGui.QPixmap().fromImage(self.image))
+		QtGui.QApplication.restoreOverrideCursor()
+	def resizeEvent(self,event):
+		if self.image:
+			scaledSize = self.image.size()
+			scaledSize.scale(self.size(),QtCore.Qt.KeepAspectRatio);
+			self.setPixmap(QtGui.QPixmap().fromImage(self.image.scaled(self.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)))
+
+
 class FPPMainWindow(QtGui.QMainWindow):	
 	"""Main window class. Core element of the HQ."""
 	
@@ -45,8 +92,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 			u" 32x32":   QtCore.QSize( 32, 32),
 			u" 64x64":   QtCore.QSize( 64, 64),
 			u"128x128": QtCore.QSize(128,128),
-			u"160x160": QtCore.QSize(160,160)
+			u"160x160": QtCore.QSize(160,160)#,
+			#u"256x256": QtCore.QSize(256,256),
+			#u"512x512": QtCore.QSize(512,512)
 		}
+		self.dct_iconsize_max = "128x128"
+		
 		settings = QtCore.QSettings()
 		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
 		#
@@ -196,6 +247,10 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		#---------------------------------------------------------------
 		
+		self.scroll_image_label = FPPClickableLabel()
+		
+		#---------------------------------------------------------------
+		
 		self.dock_geotagging = FotoPreProcessorWidgets.FPPGeoTaggingDock()
 		self.dock_timezones  = FotoPreProcessorWidgets.FPPTimezonesDock()
 		self.dock_keywords   = FotoPreProcessorWidgets.FPPKeywordsDock()
@@ -286,6 +341,19 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.list_images,
 			QtCore.SIGNAL('itemChanged(QListWidgetItem*)'),
 			self.listImagesItemChanged
+		)
+		self.connect(
+			self.list_images,
+			QtCore.SIGNAL('itemDoubleClicked(QListWidgetItem*)'),
+			self.openPreviewImage
+		)
+		
+		#---------------------------------------------------------------
+		
+		self.connect(
+			self.scroll_image_label,
+			QtCore.SIGNAL('leftClicked()'), # leftDoubleClicked
+			self.closePreviewImage
 		)
 		
 		#---------------------------------------------------------------
@@ -478,7 +546,11 @@ class FPPMainWindow(QtGui.QMainWindow):
 		#---------------------------------------------------------------
 		# construct main window
 		#---------------------------------------------------------------
-		self.setCentralWidget(self.list_images)
+		self.main_widget = QtGui.QStackedWidget()
+		self.main_widget.addWidget(self.list_images)
+		self.main_widget.addWidget(self.scroll_image_label)
+		self.setCentralWidget(self.main_widget)
+		
 		self.resize(self.size_window)
 		
 		self.addDockWidget(QtCore.Qt.RightDockWidgetArea,self.dock_geotagging)
@@ -593,8 +665,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		progress = QtGui.QProgressDialog(self)
 		progress.setWindowModality(QtCore.Qt.WindowModal)
-		progress.setRange(0,100)
-		progress.setValue(0)
+		progress.setMinimumDuration(0)
+		progress.setAutoClose(False)
+		progress.setAutoReset(False)
 		
 		if self.action_sortByName.isChecked():
 			sortCriterion = FotoPreProcessorItem.FPPGalleryItem.SortByName
@@ -610,6 +683,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		l_filelist = len(filelist)
 		progress.setRange(0,l_filelist)
+		progress.setValue(0)
 		
 		if l_filelist > 0 and len(self.ustr_path_exiftool) > 0:
 			proc_exiftool = subprocess.Popen([
@@ -636,13 +710,15 @@ class FPPMainWindow(QtGui.QMainWindow):
 				u"-LensType",
 				u"-ThumbnailImageValidArea",
 				u"-Copyright",
+				u"-Author",
 				u"-GPS:GPSLatitude#",
 				u"-GPS:GPSLatitudeRef#",
 				u"-GPS:GPSLongitude#",
 				u"-GPS:GPSLongitudeRef#",
 				u"-GPS:GPSAltitude#",
 				u"-GPS:GPSAltitudeRef#",
-				u"-ThumbnailImage"
+				u"-ThumbnailImage",
+				u"-ImageSize"
 			],stdout=subprocess.PIPE,stdin=subprocess.PIPE,stderr=subprocess.PIPE)
 			
 			for i in xrange(0,l_filelist,self.int_stepsize):
@@ -657,6 +733,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 				# in addition, exiftool output ends with {ready}, so we have to catch it
 				f_stdout = proc_exiftool.stdout.fileno()
 				str_output = str()
+				QtCore.QCoreApplication.processEvents()
 				while not str_output[-64:].strip().endswith('{ready}'):
 					# read until {ready} occurs
 					str_output += os.read(f_stdout,self.int_readsize).decode(sys.stdout.encoding)
@@ -703,7 +780,10 @@ class FPPMainWindow(QtGui.QMainWindow):
 					elevation    = unicode()
 					elevationRef = unicode()
 					thumbData    = unicode()
-					
+					author       = unicode()
+					copyright    = unicode()
+					imgwidth     = -1
+					imgheight    = -1
 					item = FotoPreProcessorItem.FPPGalleryItem(self.list_images)
 					item.setFilename(filename)
 					
@@ -745,10 +825,11 @@ class FPPMainWindow(QtGui.QMainWindow):
 						elif node.localName == "ThumbnailImageValidArea":
 							thumbArea = self.getFirstTextChild(node)
 						elif node.localName == "Copyright":
-							cr = self.getFirstTextChild(node)
-							try:    cr = re.match(r'^(©|\(C\)|\(c\)|Copyright \(C\)|Copyright \(c\)|Copyright ©) [0-9-]* (.*)',cr).groups()[1]
+							copyright = self.getFirstTextChild(node)
+							try:    copyright = re.match(r'^(©|\(C\)|\(c\)|Copyright \(C\)|Copyright \(c\)|Copyright ©) [0-9-]* (.*)',copyright).groups()[1]
 							except: pass
-							item.setCopyright(cr)
+						elif node.localName == "Author":
+							author = self.getFirstTextChild(node)
 						elif node.localName == "GPSLatitude":
 							latitude = self.getFirstTextChild(node)
 						elif node.localName == "GPSLatitudeRef":
@@ -763,16 +844,24 @@ class FPPMainWindow(QtGui.QMainWindow):
 							elevationRef = self.getFirstTextChild(node)
 						elif node.localName == "ThumbnailImage":
 							thumbData = base64.b64decode(self.getFirstTextChild(node))
+						elif node.localName == "ImageSize":
+							try:
+								imgwidth,imgheight = [int(i) for i in self.getFirstTextChild(node).split("x")]
+							except:
+								pass
 					
+					# 2013-01-08: +support for preview images >160px
+					# 2013-05-02: -support for preview images >160px (reduce memory footprint, instead do preview on-demand)
+					# resources: thumbnail image
+					# maximum: self.dct_iconsize_max
+					# 1. try thumb
+					# 2. use unknownPicture2
+					# sidenote: optimised QPixmap usage; by avoiding stupid
+					# re-assignment (thumbImage = QPixmap()) memory usage is kept low
 					thumbImage = QtGui.QPixmap()
-					if not thumbImage.loadFromData(thumbData):
+					if thumbImage.loadFromData(thumbData):
 						try:
-							thumbImage = QtGui.QPixmap(filepath)
-							thumbImage.scaled(QtCore.QSize(160,160),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)
-						except:
-							thumbImage = QtGui.QPixmap(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"unknownPicture2.png"))
-					else:
-						try:
+							# try to fit thumbnail into its area
 							(x1,x2,y1,y2) = tuple(thumbArea.split(u" "))
 							thumbRect = QtCore.QRect()
 							thumbRect.setTop(int(y1))
@@ -782,6 +871,24 @@ class FPPMainWindow(QtGui.QMainWindow):
 							thumbImage = thumbImage.copy(thumbRect)
 						except:
 							pass
+					else:
+						if imgwidth < 500 and imgheight < 500:
+							# if original image is small enough: load it directly as thumb
+							thumbImage.load(filepath)
+						else:
+							# load unknownPicture2
+							result = thumbImage.load(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"unknownPicture2.png"))
+							if not result:
+								# well, at this point we have a non-valid
+								# image and an erroneous installation...
+								continue
+					
+					# scale thumb image and store it in the item
+					thumbImage.scaled(
+						self.dct_iconsize[self.dct_iconsize_max],
+						QtCore.Qt.KeepAspectRatio,
+						QtCore.Qt.SmoothTransformation
+					)
 					item.setThumbnail(thumbImage)
 					
 					if len(timestamp) == 0:
@@ -834,6 +941,21 @@ class FPPMainWindow(QtGui.QMainWindow):
 					except:
 						pass
 					
+					# copyright string = author name
+					#
+					# additional symbols and strings (i.e. "Copyright" and
+					# (c) or © resp.) are added later by the exec routine
+					#
+					# Thus this snippet first tries to use author information
+					# to set the copyright notice of the item. If no author
+					# information is given, the copyright tag is evaluated.
+					# If everything fails, no copyright is set (remains "").
+					if len(author) > 0:
+						item.setCopyright(author)
+					else:
+						if len(copyright) > 0:
+							item.setCopyright(copyright)
+
 					item.setSortCriterion(sortCriterion)
 					item.saveState()
 					
@@ -841,7 +963,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 					# end of image package processing
 					#
 					self.list_images.setUpdatesEnabled(True)
-					
+				
 				if progress.wasCanceled(): break
 				#
 				# end of file processing
@@ -881,6 +1003,18 @@ class FPPMainWindow(QtGui.QMainWindow):
 				edited = True
 				break
 		self.action_apply.setEnabled(edited and len(self.ustr_path_exiftool) > 0)
+	
+	
+	def openPreviewImage(self,item):
+		# present preview of the image list item currently double-clicked
+		self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+		self.scroll_image_label.adjustSize()
+		self.main_widget.setCurrentIndex(1)
+	
+	
+	def closePreviewImage(self):
+		# restore image list
+		self.main_widget.setCurrentIndex(0)
 	
 	
 	def listImagesSelectionChanged(self):
@@ -1084,6 +1218,14 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.action_rotateLeft.setEnabled(True)
 			self.action_rotateRight.setEnabled(True)
 		else:
+			#
+			# 2012-11-27: no item selected: reset docks
+			#
+			self.dock_geotagging.setLocation()
+			self.dock_timezones.setTimezones()
+			self.dock_keywords.setKeywords()
+			self.dock_copyright.setCopyright()
+			
 			self.dock_geotagging.setEnabled(False)
 			self.dock_timezones.setEnabled(False)
 			self.dock_keywords.setEnabled(False)
@@ -1109,15 +1251,22 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def rotateImageLeft(self):
 		for item in self.list_images.selectedItems(): item.rotateLeft()
 		self.action_resetOrientation.setEnabled(True)
-	
+		if self.main_widget.currentIndex() == 1:
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.adjustSize()
 	
 	def rotateImageRight(self):
 		for item in self.list_images.selectedItems(): item.rotateRight()
 		self.action_resetOrientation.setEnabled(True)
-	
+		if self.main_widget.currentIndex() == 1:
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.adjustSize()
 	
 	def resetOrientation(self):
 		for item in self.list_images.selectedItems(): item.resetOrientation()
+		if self.main_widget.currentIndex() == 1:
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.adjustSize()
 	
 	#-----------------------------------------------------------------------
 	# geotagging: methods
@@ -1236,7 +1385,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 				parameters = list()
 				
 				if item.orientationEdited():
-					parameters.append(u"-Orientation={0}".format(item.orientation()))
+					# need to set --printConv for Orientation by adding "#"
+					parameters.append(u"-Orientation#={0}".format(item.orientation()))
 				
 				if item.locationEdited():
 					try:
@@ -1290,6 +1440,9 @@ class FPPMainWindow(QtGui.QMainWindow):
 				if item.copyrightEdited():
 					parameters.append(u"-Copyright=Copyright (C) {0} {1}".format(
 						item.shiftedTimestamp().strftime("%Y"),
+						item.copyright()
+					))
+					parameters.append(u"-Author={0}".format(
 						item.copyright()
 					))
 				

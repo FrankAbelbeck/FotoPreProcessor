@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorTools: GeoTagging GUI, timezone management, strings DB
@@ -88,18 +88,21 @@ file is not available, FPP will try its one version of that file."""
 						# convert from dms to decimal degrees
 						lat = float(coords[0:3]) + (float(coords[3:5]) + float(coords[5:7])/60.0)/60.0
 						lon = float(coords[7:11]) + (float(coords[11:13]) + float(coords[13:15])/60.0)/60.0
-					tz = pytz.timezone(tzname)
-					t_n = tz.localize(t_normal).strftime(u"%z")
-					t_s = tz.localize(t_summer).strftime(u"%z")
-					self.dct_timezones[tzname] = (
-						lat,
-						lon
-					)
-					self.dct_timezone_offsets[tzname] = (
-						(int(t_n[0:3])*60+int(t_n[3:5])),
-						(int(t_s[0:3])*60+int(t_s[3:5]))
-					)
-					lst_tzname.append(tzname)
+					try:
+						tz = pytz.timezone(tzname)
+						t_n = tz.localize(t_normal).strftime(u"%z")
+						t_s = tz.localize(t_summer).strftime(u"%z")
+						self.dct_timezones[tzname] = (
+							lat,
+							lon
+						)
+						self.dct_timezone_offsets[tzname] = (
+							(int(t_n[0:3])*60+int(t_n[3:5])),
+							(int(t_s[0:3])*60+int(t_s[3:5]))
+						)
+						lst_tzname.append(tzname)
+					except:
+						pass # most likely: tzname unknown... ignore
 		
 		lst_tzname.sort()
 		lst_tzname.insert(0,u"UTC")
