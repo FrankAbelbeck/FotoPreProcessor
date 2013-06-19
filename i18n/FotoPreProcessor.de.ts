@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE TS>
-<TS version="2.0" language="de_DE" sourcelanguage="en_GB">
+<!DOCTYPE TS><TS version="2.0" language="de_DE" sourcelanguage="en_GB">
 <context>
     <name>CLI</name>
     <message>
-        <location filename="FotoPreProcessor.py" line="1396"/>
+        <location filename="FotoPreProcessor.py" line="1683"/>
         <source>License information:</source>
         <translation>Lizenzinformation:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="1421"/>
+        <location filename="FotoPreProcessor.py" line="1708"/>
         <source>SVN revision: %1</source>
         <translation>SVN-Revision: %1</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="1370"/>
+        <location filename="FotoPreProcessor.py" line="1657"/>
         <source>Usage: %1 [-h][-l][-v][DIR]
 
 PyQt4-based (EXIF) metadata management of images in a directory.
@@ -51,32 +50,32 @@ weiterverbreiten (für Details siehe Argument --license).</translation>
 <context>
     <name>Dialog</name>
     <message>
-        <location filename="FotoPreProcessor.py" line="524"/>
+        <location filename="FotoPreProcessor.py" line="662"/>
         <source>Select Directory</source>
         <translation>Verzeichnis auswählen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="674"/>
+        <location filename="FotoPreProcessor.py" line="828"/>
         <source>Processing Image</source>
         <translation>Verarbeite Bild</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="907"/>
+        <location filename="FotoPreProcessor.py" line="1155"/>
         <source>Location Collision</source>
         <translation>Positions-Kollision</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="939"/>
+        <location filename="FotoPreProcessor.py" line="1192"/>
         <source>Timezones Collision</source>
         <translation>Zeitzonen-Kollision</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="968"/>
+        <location filename="FotoPreProcessor.py" line="1227"/>
         <source>Keyword Collision</source>
         <translation>Schlüsselwort-Kollision</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="1021"/>
+        <location filename="FotoPreProcessor.py" line="1286"/>
         <source>Copyright Collision</source>
         <translation>Urheber-Kollision</translation>
     </message>
@@ -96,32 +95,32 @@ weiterverbreiten (für Details siehe Argument --license).</translation>
         <translation>Ausführen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="963"/>
+        <location filename="FotoPreProcessor.py" line="1222"/>
         <source>Disable keyword settings.</source>
         <translation>Schlüsselwort-Einstellungen deaktivieren.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="964"/>
+        <location filename="FotoPreProcessor.py" line="1223"/>
         <source>Remove all keywords from all images.</source>
         <translation>Alle Schlüsselworte aus allen Bildern entfernen.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="965"/>
+        <location filename="FotoPreProcessor.py" line="1224"/>
         <source>Apply union of all keywords to all images.</source>
         <translation>Vereinigungsmenge aller Schlüsselworte allen Bildern zuweisen.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="966"/>
+        <location filename="FotoPreProcessor.py" line="1225"/>
         <source>Only edit keywords common to all images.</source>
         <translation>Nur Schlüsselworte bearbeiten, die allen Bildern gemein sind.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="968"/>
+        <location filename="FotoPreProcessor.py" line="1227"/>
         <source>Remove common keywords and merge the remaining.</source>
         <translation>Alle gemeinsamen Schlüsselworte entfernen und die verbliebenen zusammenführen.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="504"/>
+        <location filename="FotoPreProcessor.py" line="642"/>
         <source>Exit Application</source>
         <translation>Anwendung beenden</translation>
     </message>
@@ -136,14 +135,14 @@ weiterverbreiten (für Details siehe Argument --license).</translation>
         <translation>Solch ein Schlüsselwort ist bereits auf der Liste und wird deshalb ignoriert.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="504"/>
+        <location filename="FotoPreProcessor.py" line="642"/>
         <source>Some changes were made.
 Do you want to apply them before exiting?</source>
         <translation>Es wurden einige Änderungen vorgenommen.
 Wollen Sie diese vor Programmende noch anwenden?</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="907"/>
+        <location filename="FotoPreProcessor.py" line="1155"/>
         <source>The selected images are tagged with different locations.
 Do you want to reset them?
 If you answer &quot;No&quot;, GeoTagging will be disabled.</source>
@@ -152,7 +151,7 @@ Wollen Sie diese zurücksetzen?
 Wenn Sie mit &quot;Nein&quot; antworten, werden die Positionseinstellungen deaktiviert.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="939"/>
+        <location filename="FotoPreProcessor.py" line="1192"/>
         <source>The selected images feature different timezone correction information.
 Which one should be used?
 If you cancel this dialog, timezone settings will be disabled.</source>
@@ -161,7 +160,7 @@ Welche soll verwendet werden?
 Wenn Sie diesen Dialog abbrechen, werden die Zeitzoneneinstellungen deaktiviert.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="968"/>
+        <location filename="FotoPreProcessor.py" line="1227"/>
         <source>The selected images feature different sets of keywords.
 What do you want to do?
 If you cancel this dialog, keyword settings will be disabled.</source>
@@ -170,7 +169,7 @@ Was möchten sie tun?
 Wenn Sie diesen Dialog abbrechen, werden die Schlüsselworteinstellungen deaktiviert.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="1021"/>
+        <location filename="FotoPreProcessor.py" line="1286"/>
         <source>The selected images feature different copyright notices.
 Which one should be used?
 If you cancel this dialog, copyright settings will be disabled.</source>
@@ -179,7 +178,7 @@ Welche soll verwendet werden?
 Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="1039"/>
+        <location filename="FotoPreProcessorWidgets.py" line="1041"/>
         <source>&lt;h4&gt;FotoPreProcessor&lt;/h4&gt;
 &lt;p&gt;PyQt4-based (EXIF) metadata management of images in a directory.&lt;/p&gt;
 &lt;p&gt;Copyright (C) 2012 Frank Abelbeck &amp;#60;frank.abelbeck@googlemail.com&amp;#62;&lt;/p&gt;
@@ -190,17 +189,17 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
 &lt;p&gt;Revision %1&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="1056"/>
+        <location filename="FotoPreProcessorWidgets.py" line="1058"/>
         <source>General Information</source>
         <translation>Allgemeine Informationen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="1057"/>
+        <location filename="FotoPreProcessorWidgets.py" line="1059"/>
         <source>License</source>
         <translation>Lizenz</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="63"/>
+        <location filename="FotoPreProcessor.py" line="162"/>
         <source>Initial Configuration Cancelled</source>
         <translation>Erstkonfiguration abgebrochen</translation>
     </message>
@@ -210,62 +209,62 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
         <translation>...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="772"/>
+        <location filename="FotoPreProcessorWidgets.py" line="774"/>
         <source>Program Paths</source>
         <translation>Programmpfade</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="780"/>
+        <location filename="FotoPreProcessorWidgets.py" line="782"/>
         <source>Exiftool:</source>
         <translation>Exiftool:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="798"/>
+        <location filename="FotoPreProcessorWidgets.py" line="800"/>
         <source>Performance Parameters</source>
         <translation>Leistungsparameter</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="800"/>
+        <location filename="FotoPreProcessorWidgets.py" line="802"/>
         <source>Image files read at once:</source>
         <translation>gleichzeitig eingelesene Bilddateien:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="801"/>
+        <location filename="FotoPreProcessorWidgets.py" line="803"/>
         <source>Characters read at once:</source>
         <translation>gleichzeitig eingelesene Zeichen:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="946"/>
+        <location filename="FotoPreProcessorWidgets.py" line="948"/>
         <source>Select Exiftool Executable</source>
         <translation>Exiftool-Programmdatei auswählen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="957"/>
+        <location filename="FotoPreProcessorWidgets.py" line="959"/>
         <source>Select The GIMP Executable</source>
         <translation>The-GIMP-Programmdatei auswählen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="781"/>
+        <location filename="FotoPreProcessorWidgets.py" line="783"/>
         <source>The GIMP:</source>
         <translation>The GIMP:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="63"/>
+        <location filename="FotoPreProcessor.py" line="162"/>
         <source>The program was not properly configured and thus is terminated.</source>
         <translation>Das Programm wurde nicht ordentlich konfiguriert und wird daher beendet.</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="806"/>
+        <location filename="FotoPreProcessorWidgets.py" line="808"/>
         <source>GeoTagging</source>
         <translation>GeoTagging</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="808"/>
+        <location filename="FotoPreProcessorWidgets.py" line="810"/>
         <source>Default latitude:</source>
         <translation>Standard-Breitengrad:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="809"/>
+        <location filename="FotoPreProcessorWidgets.py" line="811"/>
         <source>Default longitude:</source>
         <translation>Standard-Längengrad:</translation>
     </message>
@@ -278,7 +277,7 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
         <translation>GeoTagging</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorWidgets.py" line="762"/>
+        <location filename="FotoPreProcessorWidgets.py" line="764"/>
         <source>Look-Up...</source>
         <translation>Nachschlagen...</translation>
     </message>
@@ -356,57 +355,57 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
 <context>
     <name>GeoLookUpDialog</name>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="318"/>
+        <location filename="FotoPreProcessorTools.py" line="321"/>
         <source>Add...</source>
         <translation>Hinzufügen...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="322"/>
+        <location filename="FotoPreProcessorTools.py" line="325"/>
         <source>Delete</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="331"/>
+        <location filename="FotoPreProcessorTools.py" line="334"/>
         <source>Go to</source>
         <translation>Gehe zu</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="350"/>
+        <location filename="FotoPreProcessorTools.py" line="353"/>
         <source>Latitude:</source>
         <translation>Breitengrad:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="354"/>
+        <location filename="FotoPreProcessorTools.py" line="357"/>
         <source>Longitude:</source>
         <translation>Längengrad:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="374"/>
+        <location filename="FotoPreProcessorTools.py" line="377"/>
         <source>OK</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="375"/>
+        <location filename="FotoPreProcessorTools.py" line="378"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="534"/>
+        <location filename="FotoPreProcessorTools.py" line="537"/>
         <source>Add new Named Location</source>
         <translation>Einen neuen Ort hinzufügen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="534"/>
+        <location filename="FotoPreProcessorTools.py" line="537"/>
         <source>Please provide a name for currently set location:</source>
         <translation>Bitte geben Sie einen Namen für die gegenwärtig gesetzte Position an:</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="541"/>
+        <location filename="FotoPreProcessorTools.py" line="544"/>
         <source>Overwriting Existing Name</source>
         <translation>Existierenden Namen überschreiben</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessorTools.py" line="541"/>
+        <location filename="FotoPreProcessorTools.py" line="544"/>
         <source>A location with that name exists. Shall it be overwritten?</source>
         <translation>Ein Ort mit dem Namen existiert. Soll er überschrieben werden?</translation>
     </message>
@@ -414,17 +413,17 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
 <context>
     <name>ItemToolTip</name>
     <message>
-        <location filename="FotoPreProcessorItem.py" line="676"/>
+        <location filename="FotoPreProcessorItem.py" line="692"/>
         <source>Elevation</source>
         <translation>Höhe</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="788"/>
+        <location filename="FotoPreProcessor.py" line="974"/>
         <source>on full-frame</source>
         <translation>an Vollformat</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="793"/>
+        <location filename="FotoPreProcessor.py" line="979"/>
         <source>physical</source>
         <translation>physikalisch</translation>
     </message>
@@ -432,7 +431,7 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="FotoPreProcessor.py" line="547"/>
+        <location filename="FotoPreProcessor.py" line="685"/>
         <source>FotoPreProcessor</source>
         <translation>FotoPreProcessor</translation>
     </message>
@@ -440,139 +439,157 @@ Wenn Sie diesen Dialog abbrechen, werden die Urhebereinstellungen deaktiviert.</
 <context>
     <name>Menu</name>
     <message>
-        <location filename="FotoPreProcessor.py" line="145"/>
+        <location filename="FotoPreProcessor.py" line="244"/>
         <source>Open directory...</source>
         <translation>Verzeichnis öffnen...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="146"/>
+        <location filename="FotoPreProcessor.py" line="245"/>
         <source>Apply changes...</source>
         <translation>Änderungen anwenden...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="147"/>
+        <location filename="FotoPreProcessor.py" line="246"/>
         <source>Quit</source>
         <translation>Beenden</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="148"/>
+        <location filename="FotoPreProcessor.py" line="247"/>
         <source>Rotate left</source>
         <translation>Nach links drehen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="149"/>
+        <location filename="FotoPreProcessor.py" line="248"/>
         <source>Rotate right</source>
         <translation>Nach rechts drehen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="150"/>
+        <location filename="FotoPreProcessor.py" line="249"/>
         <source>Look up coordinates...</source>
         <translation>Koordinaten nachschlagen...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="151"/>
+        <location filename="FotoPreProcessor.py" line="250"/>
         <source>Open with the GIMP...</source>
         <translation>Mit The GIMP öffnen...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="152"/>
+        <location filename="FotoPreProcessor.py" line="251"/>
         <source>Reset orientation</source>
         <translation>Ausrichtung zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="153"/>
+        <location filename="FotoPreProcessor.py" line="252"/>
         <source>Reset coordinates</source>
         <translation>Koordinaten zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="154"/>
+        <location filename="FotoPreProcessor.py" line="253"/>
         <source>Reset keywords</source>
         <translation>Schlüsselworte zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="155"/>
+        <location filename="FotoPreProcessor.py" line="254"/>
         <source>Reset timezones</source>
         <translation>Zeitzonen zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="156"/>
+        <location filename="FotoPreProcessor.py" line="255"/>
         <source>Reset copyright notice</source>
         <translation>Urhebernotiz zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="157"/>
+        <location filename="FotoPreProcessor.py" line="256"/>
         <source>Reset everything</source>
         <translation>Alles zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="159"/>
+        <location filename="FotoPreProcessor.py" line="258"/>
         <source>Configure FPP...</source>
         <translation>FPP konfigurieren...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="216"/>
+        <location filename="FotoPreProcessor.py" line="319"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="223"/>
+        <location filename="FotoPreProcessor.py" line="326"/>
         <source>&amp;Edit</source>
         <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="229"/>
+        <location filename="FotoPreProcessor.py" line="332"/>
         <source>Reset values</source>
         <translation>Werte zurücksetzen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="242"/>
+        <location filename="FotoPreProcessor.py" line="345"/>
         <source>&amp;Settings</source>
         <translation>&amp;Einstellungen</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="243"/>
+        <location filename="FotoPreProcessor.py" line="346"/>
         <source>Dockable windows</source>
         <translation>Andockbare Fenster</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="244"/>
+        <location filename="FotoPreProcessor.py" line="347"/>
         <source>Icon size</source>
         <translation>Vorschaubildgröße</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="163"/>
+        <location filename="FotoPreProcessor.py" line="262"/>
         <source>Sort by camera</source>
         <translation>Nach Kamera sortieren</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="245"/>
+        <location filename="FotoPreProcessor.py" line="348"/>
         <source>Sort criterion</source>
         <translation>Sortierkriterium</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="161"/>
+        <location filename="FotoPreProcessor.py" line="260"/>
         <source>Sort by filename</source>
         <translation>Nach Dateinamen sortieren</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="162"/>
+        <location filename="FotoPreProcessor.py" line="261"/>
         <source>Sort by timestamp</source>
         <translation>Nach Zeitstempel sortieren</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="171"/>
+        <location filename="FotoPreProcessor.py" line="270"/>
         <source>About FotoPreProcessor...</source>
         <translation>Über FotoPreProcessor...</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="272"/>
+        <location filename="FotoPreProcessor.py" line="375"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="FotoPreProcessor.py" line="172"/>
+        <location filename="FotoPreProcessor.py" line="271"/>
         <source>About Qt...</source>
         <translation>Über Qt...</translation>
+    </message>
+</context>
+<context>
+    <name>Preview</name>
+    <message>
+        <location filename="FotoPreProcessor.py" line="48"/>
+        <source>Next</source>
+        <translation>Nächstes</translation>
+    </message>
+    <message>
+        <location filename="FotoPreProcessor.py" line="49"/>
+        <source>Back</source>
+        <translation>Zurück</translation>
+    </message>
+    <message>
+        <location filename="FotoPreProcessor.py" line="47"/>
+        <source>Previous</source>
+        <translation>Vorheriges</translation>
     </message>
 </context>
 </TS>

@@ -137,7 +137,10 @@ Appropriate methods for handling and showing these properties are defined, too."
 		self.bool_editedTimezones = False
 		self.bool_editedKeywords = False
 		self.bool_editedCopyright = False
-	
+		
+		self.int_width = -1
+		self.int_height = -1
+		
 		self.int_sortCriterion = self.SortByName
 	
 	
@@ -223,6 +226,19 @@ Appropriate methods for handling and showing these properties are defined, too."
 	def setSortCriterion(self,value=SortByName):
 		if value == self.SortByCamera or value == self.SortByTime or value == self.SortByName:
 			self.int_sortCriterion = value
+	
+	
+	def setSize(self,width,height):
+		try:
+			self.int_width = int(width)
+			self.int_height = int(height)
+		except:
+			self.int_width = -1
+			self.int_height = -1
+	
+	
+	def size(self):
+		return (self.int_width,self.int_height)
 	
 	
 	def updateEditState(self):

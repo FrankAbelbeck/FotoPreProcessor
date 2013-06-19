@@ -43,6 +43,38 @@ class FPPClickableLabel(QtGui.QLabel):
 		self.setScaledContents(False)
 		self.setAlignment(QtCore.Qt.AlignCenter)
 		self.setBackgroundRole(QtGui.QPalette.Dark)
+		
+		self.button_prev = QtGui.QPushButton(QtGui.QIcon.fromTheme("go-previous"),QtCore.QCoreApplication.translate(u"Preview",u"Previous"))
+		self.button_next = QtGui.QPushButton(QtGui.QIcon.fromTheme("go-next"),QtCore.QCoreApplication.translate(u"Preview",u"Next"))
+		self.button_exit = QtGui.QPushButton(QtGui.QIcon.fromTheme("window-close"),QtCore.QCoreApplication.translate(u"Preview",u"Back"))
+		
+		self.connect(self.button_prev,QtCore.SIGNAL('clicked()'),self.loadPrev)
+		self.connect(self.button_next,QtCore.SIGNAL('clicked()'),self.loadNext)
+		self.connect(self.button_exit,QtCore.SIGNAL('clicked()'),self.goBack)
+		
+		self.button_prev.setFlat(True)
+		self.button_next.setFlat(True)
+		self.button_exit.setFlat(True)
+		
+		self.button_prev.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_prev.graphicsEffect().setOpacity(0.66)
+		self.button_next.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_next.graphicsEffect().setOpacity(0.66)
+		self.button_exit.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_exit.graphicsEffect().setOpacity(0.66)
+		
+		self.button_prev.setShortcut(QtGui.QKeySequence(u"Left"))
+		self.button_next.setShortcut(QtGui.QKeySequence(u"Right"))
+		self.button_exit.setShortcut(QtGui.QKeySequence(u"Escape"))
+		
+		layout = QtGui.QGridLayout()
+		layout.addWidget(self.button_prev,2,0)
+		layout.addWidget(self.button_next,2,2)
+		layout.addWidget(self.button_exit,0,2)
+		layout.setRowStretch(1,1)
+		layout.setColumnStretch(1,1)
+		self.setLayout(layout)
+		
 	def mousePressEvent(self,event):
 		if event.button() == QtCore.Qt.LeftButton:
 			self.emit(QtCore.SIGNAL("leftClicked()"))
@@ -53,7 +85,13 @@ class FPPClickableLabel(QtGui.QLabel):
 			self.emit(QtCore.SIGNAL("leftDoubleClicked()"))
 		elif event.button() == QtCore.Qt.RightButton:
 			self.emit(QtCore.SIGNAL("rightDoubleClicked()"))
-	def updateItem(self,filepath,orientation):
+	def loadPrev(self):
+		self.emit(QtCore.SIGNAL("loadPrev()"))
+	def loadNext(self):
+		self.emit(QtCore.SIGNAL("loadNext()"))
+	def goBack(self):
+		self.emit(QtCore.SIGNAL("goBack()"))
+	def updateItem(self,filepath,orientation,imgsize,tooltip):
 		QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 		matrix = QtGui.QTransform()
 		if orientation == 2:
@@ -72,9 +110,19 @@ class FPPClickableLabel(QtGui.QLabel):
 			matrix.rotate(90)
 		elif orientation == 8:
 			matrix.rotate(270)
-		self.image = QtGui.QImage(filepath).transformed(matrix,QtCore.Qt.SmoothTransformation)
+		self.image = QtGui.QImage(filepath)
+		
+		# fix CR2 "flaw": if raw file is loaded, the image is apparently rotated
+		# automatically. Therefore, compare original image size with the size
+		# of the loaded image and only apply the transformation if sizes differ...
+		imgsize2 = (self.image.width(),self.image.height())
+		if orientation in (3,5,6,7,8) and imgsize[0] != imgsize2[1] and imgsize[1] != imgsize2[0]:
+			self.image = self.image.transformed(matrix,QtCore.Qt.SmoothTransformation)
+		
 		self.setPixmap(QtGui.QPixmap().fromImage(self.image))
 		QtGui.QApplication.restoreOverrideCursor()
+		self.setToolTip(tooltip)
+		
 	def resizeEvent(self,event):
 		if self.image:
 			scaledSize = self.image.size()
@@ -354,6 +402,24 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.scroll_image_label,
 			QtCore.SIGNAL('leftClicked()'), # leftDoubleClicked
 			self.closePreviewImage
+		)
+		
+		self.connect(
+			self.scroll_image_label,
+			QtCore.SIGNAL('goBack()'), # exit button triggered
+			self.closePreviewImage
+		)
+		
+		self.connect(
+			self.scroll_image_label,
+			QtCore.SIGNAL('loadNext()'), # next button triggered
+			self.loadNextPreviewImage
+		)
+		
+		self.connect(
+			self.scroll_image_label,
+			QtCore.SIGNAL('loadPrev()'), # prev button triggered
+			self.loadPrevPreviewImage
 		)
 		
 		#---------------------------------------------------------------
@@ -891,6 +957,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 					)
 					item.setThumbnail(thumbImage)
 					
+					item.setSize(imgwidth,imgheight);
+					
 					if len(timestamp) == 0:
 						# no EXIF timestamp , so obtain timestamp from filesystem
 						timestamp = time.strftime(
@@ -1007,7 +1075,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	def openPreviewImage(self,item):
 		# present preview of the image list item currently double-clicked
-		self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+		self.list_images.setCurrentRow(self.list_images.currentRow(),QtGui.QItemSelectionModel.ClearAndSelect)
+		self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
 		self.scroll_image_label.adjustSize()
 		self.main_widget.setCurrentIndex(1)
 	
@@ -1015,6 +1084,34 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def closePreviewImage(self):
 		# restore image list
 		self.main_widget.setCurrentIndex(0)
+	
+	
+	def loadPrevPreviewImage(self):
+		# load the previous image in the list
+		count = self.list_images.count()
+		index = self.list_images.currentRow()
+		if index == 0:
+			index = count - 1
+		else:
+			index = index - 1
+		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
+		item = self.list_images.currentItem()
+		self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+		self.scroll_image_label.adjustSize()
+	
+	
+	def loadNextPreviewImage(self):
+		# load the previous image in the list
+		count = self.list_images.count()
+		index = self.list_images.currentRow()
+		if index == count - 1:
+			index = 0
+		else:
+			index = index + 1
+		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
+		item = self.list_images.currentItem()
+		self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+		self.scroll_image_label.adjustSize()
 	
 	
 	def listImagesSelectionChanged(self):
@@ -1252,20 +1349,20 @@ class FPPMainWindow(QtGui.QMainWindow):
 		for item in self.list_images.selectedItems(): item.rotateLeft()
 		self.action_resetOrientation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
 	def rotateImageRight(self):
 		for item in self.list_images.selectedItems(): item.rotateRight()
 		self.action_resetOrientation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
 	def resetOrientation(self):
 		for item in self.list_images.selectedItems(): item.resetOrientation()
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation())
+			self.scroll_image_label.updateItem(unicode(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
 	#-----------------------------------------------------------------------
