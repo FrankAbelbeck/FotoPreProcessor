@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorTools: GeoTagging GUI, timezone management, strings DB
-Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -24,6 +24,9 @@ $Id$
 
 import datetime,pytz,os.path,sys,codecs
 
+# 2015-06-16: search support needs urllib for requests and json for decoding
+import urllib.request,urllib.parse,json
+
 from PyQt4 import QtGui, QtCore, QtWebKit
 
 
@@ -40,7 +43,7 @@ provides the ability to reverse look-up a timezone name by position."""
 		self.tpl_timezone_names = tuple()
 	
 	
-	def loadTimezoneDB(self,filename=u"/usr/share/zoneinfo/zone.tab"):
+	def loadTimezoneDB(self,filename="/usr/share/zoneinfo/zone.tab"):
 		"""Load timezone information from a certain file.
 
 The files has to contain tab-delimited information on timezones:
@@ -58,14 +61,14 @@ file is not available, FPP will try its one version of that file."""
 		lst_tzname = list()
 		
 		if not os.path.isfile(filename):
-			filename = os.path.join(sys.path[0],u"zone.tab")
+			filename = os.path.join(sys.path[0],"zone.tab")
 		
-		with open(filename,u"r") as f:
+		with open(filename,"r") as f:
 			for line in f:
-				if not line.startswith(u"#"):
-					data = line.strip().split(u"\t")
-					coords = unicode(data[1])
-					tzname = unicode(data[2])
+				if not line.startswith("#"):
+					data = line.strip().split("\t")
+					coords = str(data[1])
+					tzname = str(data[2])
 					if coords[5] in ("+","-"):
 						# format: +DDMM+DDDMM
 						lat_deg = int(coords[0:3])
@@ -90,8 +93,8 @@ file is not available, FPP will try its one version of that file."""
 						lon = float(coords[7:11]) + (float(coords[11:13]) + float(coords[13:15])/60.0)/60.0
 					try:
 						tz = pytz.timezone(tzname)
-						t_n = tz.localize(t_normal).strftime(u"%z")
-						t_s = tz.localize(t_summer).strftime(u"%z")
+						t_n = tz.localize(t_normal).strftime("%z")
+						t_s = tz.localize(t_summer).strftime("%z")
 						self.dct_timezones[tzname] = (
 							lat,
 							lon
@@ -105,9 +108,9 @@ file is not available, FPP will try its one version of that file."""
 						pass # most likely: tzname unknown... ignore
 		
 		lst_tzname.sort()
-		lst_tzname.insert(0,u"UTC")
-		self.dct_timezones[u"UTC"] = (51.477678,0.0) # http://en.wikipedia.org/wiki/World_Geodetic_System
-		self.dct_timezone_offsets[u"UTC"] = (0,0)
+		lst_tzname.insert(0,"UTC")
+		self.dct_timezones["UTC"] = (51.477678,0.0) # http://en.wikipedia.org/wiki/World_Geodetic_System
+		self.dct_timezone_offsets["UTC"] = (0,0)
 		self.tpl_timezone_names = tuple(lst_tzname)
 	
 	
@@ -116,11 +119,11 @@ file is not available, FPP will try its one version of that file."""
 		return self.tpl_timezone_names
 	
 	
-	def timezoneIndex(self,tzName=unicode()):
+	def timezoneIndex(self,tzName=str()):
 		"""Return the index of given tzName in the timezone list.
 
 Returns -1 if tzName was not found."""
-		try:    retval = self.tpl_timezone_names.index(unicode(tzName))
+		try:    retval = self.tpl_timezone_names.index(str(tzName))
 		except: retval = -1
 		return retval
 	
@@ -129,7 +132,7 @@ Returns -1 if tzName was not found."""
 		"""Return UTC offsets in minutes of timezone with given name.
 
 A tuple (normal,dst) with offsets for both normal and daylight saving time."""
-		try:    offset = self.dct_timezone_offsets[unicode(name)]
+		try:    offset = self.dct_timezone_offsets[str(name)]
 		except: offset = (0,0)
 		return offset
 	
@@ -144,7 +147,7 @@ Returns None if no timezone name is found."""
 			pass
 		distance = 360**2 + 180**2
 		result = None
-		for tzname,coord in self.dct_timezones.iteritems():
+		for tzname,coord in self.dct_timezones.items():
 			dist = (coord[0]-latitude)**2 + (coord[1]-longitude)**2
 			if dist < distance:
 				result = tzname
@@ -169,7 +172,7 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 	def __init__(self):
 		"""Constructor; initialise fields."""
 		self.dct_locations = dict()
-		self.str_filename = unicode()
+		self.str_filename = str()
 		self.bool_changed = False
 	
 	def wasChanged(self):
@@ -181,15 +184,15 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 		"""Load and process given file and populate the internal bookmark database."""
 		self.dct_locations.clear()
 		try:
-			with codecs.open(filename,u"r",u"utf-8") as f:
+			with codecs.open(filename,"r","utf-8") as f:
 				for line in f:
 					if not line.startswith("#"):
 						try:
-							(lat,lon,name) = line.strip().split(u" ",2)
-							self.dct_locations[unicode(name)] = (float(lat),float(lon))
+							(lat,lon,name) = line.strip().split(" ",2)
+							self.dct_locations[str(name)] = (float(lat),float(lon))
 						except:
 							pass
-			self.str_filename = unicode(filename)
+			self.str_filename = str(filename)
 			self.bool_changed = False
 		except:
 			pass
@@ -209,8 +212,8 @@ should consist of latitude, longitude and bookmark name separated by blanks:
 		self.dct_locations.clear()
 		for bookmark in bookmarks:
 			try:
-				(lat,lon,name) = bookmark.strip().split(u" ",2)
-				self.dct_locations[unicode(name)] = (float(lat),float(lon))
+				(lat,lon,name) = bookmark.strip().split(" ",2)
+				self.dct_locations[str(name)] = (float(lat),float(lon))
 			except:
 				pass
 	
@@ -225,7 +228,7 @@ should consist of latitude, longitude and bookmark name separated by blanks:
 
 Returns a sorted tuple of name-location tuples (name,(latitude,longitude))"""
 		lst_locations = []
-		for name,location in self.dct_locations.iteritems():
+		for name,location in self.dct_locations.items():
 			lst_locations.append((name,location))
 		lst_locations.sort()
 		return tuple(lst_locations)
@@ -233,7 +236,7 @@ Returns a sorted tuple of name-location tuples (name,(latitude,longitude))"""
 	
 	def readLocation(self,name=None):
 		"""Return location tuple (latitude,longitude) of bookmark with given name."""
-		try:    location = self.dct_locations[unicode(name)]
+		try:    location = self.dct_locations[str(name)]
 		except: location = None
 		return location
 	
@@ -245,24 +248,24 @@ Existing bookmarks will be overwritten."""
 		try:
 			lat = float(latitude)
 			lon = float(longitude)
-			nam = unicode(name)
+			nam = str(name)
 		except:
 			pass
 		else:
 			if nam in self.dct_locations.keys():
 				# bookmark exists; check if it is changed
-				(lat_old,lon_old) = self.dct_locations[unicode(name)]
+				(lat_old,lon_old) = self.dct_locations[str(name)]
 				if lat_old != lat or lon_old != lon:
 					self.bool_changed = True
 			else:
 				# new bookmark: database is changed
 				self.bool_changed = True
-			self.dct_locations[unicode(name)] = (float(latitude),float(longitude))
+			self.dct_locations[str(name)] = (float(latitude),float(longitude))
 	
 	
 	def deleteLocation(self,name=None):
 		try:
-			self.dct_locations.pop(unicode(name))
+			self.dct_locations.pop(str(name))
 		except:
 			pass
 	
@@ -278,9 +281,9 @@ This behaviour can be overridden by setting force=True."""
 			filename = self.str_filename
 		try:
 			if self.bool_changed or bool(force):
-				with codecs.open(filename,u"w",u"utf-8") as f:
-					for name,location in self.dct_locations.iteritems():
-						f.write(u"{0} {1} {2}\n".format(float(location[0]),float(location[1]),unicode(name)))
+				with codecs.open(filename,"w","utf-8") as f:
+					for name,location in self.dct_locations.items():
+						f.write("{0} {1} {2}\n".format(float(location[0]),float(location[1]),str(name)))
 		except:
 			pass
 
@@ -297,13 +300,13 @@ and allows to load and store location bookmarks in the application's settings.""
 		QtGui.QDialog.__init__(self,parent)
 		
 		settings = QtCore.QSettings()
-		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 		
 		# load timezone info and bookmarks
 		self.tz = FPPTimezone()
 		self.tz.loadTimezoneDB()
 		self.bookmarks = FPPGeoBookmarks()
-		try:    self.bookmarks.loadList([unicode(i) for i in settings.value(u"LocationBookmarks",list()).toStringList()])
+		try:    self.bookmarks.loadList([str(i) for i in settings.value("LocationBookmarks",list())])
 		except: pass
 		
 		# prepare progressbar (webpage loading progress) and webview
@@ -315,14 +318,14 @@ and allows to load and store location bookmarks in the application's settings.""
 		for name,location in self.bookmarks.listLocations():
 			item = QtGui.QListWidgetItem()
 			item.setText(name)
-			item.setToolTip(u"{0:9.4f}, {1:9.4f}".format(*location))
+			item.setToolTip("{0:9.4f}, {1:9.4f}".format(*location))
 			self.list_locations.addItem(item)
 		
-		self.button_add = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Add..."))
+		self.button_add = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Add..."))
 		self.button_add.setEnabled(False)
 		self.button_add.setDisabled(True)
 		
-		self.button_del = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Delete"))
+		self.button_del = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Delete"))
 		self.button_del.setEnabled(False)
 		self.button_del.setDisabled(True)
 		
@@ -331,13 +334,13 @@ and allows to load and store location bookmarks in the application's settings.""
 		layout_locbut.addWidget(self.button_del)
 		
 		# construct controls for coordinates: lat/lon spinboxes, goto button
-		button_goto = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Go to"))
+		button_goto = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Go to"))
 		button_goto.setSizePolicy(QtGui.QSizePolicy.Preferred,QtGui.QSizePolicy.Preferred)
 		self.spin_latitude = QtGui.QDoubleSpinBox()
 		self.spin_latitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spin_latitude.setRange(-84.99999999,85)
 		self.spin_latitude.setDecimals(8)
-		self.spin_latitude.setSuffix(u" °")
+		self.spin_latitude.setSuffix(" °")
 		self.spin_latitude.setSingleStep(1)
 		self.spin_latitude.setWrapping(True)
 		
@@ -345,17 +348,17 @@ and allows to load and store location bookmarks in the application's settings.""
 		self.spin_longitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spin_longitude.setRange(-179.99999999,180)
 		self.spin_longitude.setDecimals(8)
-		self.spin_longitude.setSuffix(u" °")
+		self.spin_longitude.setSuffix(" °")
 		self.spin_longitude.setSingleStep(1)
 		self.spin_longitude.setWrapping(True)
 		
 		layout_latlon = QtGui.QFormLayout()
 		layout_latlon.addRow(
-			QtGui.QLabel(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Latitude:")),
+			QtGui.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Latitude:")),
 			self.spin_latitude
 		)
 		layout_latlon.addRow(
-			QtGui.QLabel(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Longitude:")),
+			QtGui.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Longitude:")),
 			self.spin_longitude
 		)
 		
@@ -365,7 +368,15 @@ and allows to load and store location bookmarks in the application's settings.""
 		layout_coord.addWidget(button_goto)
 		layout_coord.setAlignment(QtCore.Qt.AlignTop)
 		
+		self.edit_search = QtGui.QLineEdit()
+		button_search = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Find"))
+		
+		layout_search = QtGui.QHBoxLayout()
+		layout_search.addWidget(self.edit_search)
+		layout_search.addWidget(button_search)
+		
 		layout_locations = QtGui.QVBoxLayout()
+		layout_locations.addLayout(layout_search)
 		layout_locations.addWidget(self.list_locations)
 		layout_locations.addLayout(layout_locbut)
 		layout_locations.addLayout(layout_coord)
@@ -374,8 +385,8 @@ and allows to load and store location bookmarks in the application's settings.""
 		locations.setLayout(layout_locations)
 		
 		# create standard dialog buttons (ok/cancel)
-		button_ok = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"OK"))
-		button_cancel = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Cancel"))
+		button_ok = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","OK"))
+		button_cancel = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Cancel"))
 		
 		layout_buttons = QtGui.QHBoxLayout()
 		layout_buttons.addStretch(1)
@@ -436,6 +447,11 @@ and allows to load and store location bookmarks in the application's settings.""
 			self.writeLocationsToSettings
 		)
 		self.connect(
+			button_search,
+			QtCore.SIGNAL('clicked()'),
+			self.searchLocation
+		)
+		self.connect(
 			self.button_add,
 			QtCore.SIGNAL('clicked()'),
 			self.addLocation
@@ -473,7 +489,7 @@ and allows to load and store location bookmarks in the application's settings.""
 		
 		# start dialog by setting central layout and loading custom OSM page
 		self.setLayout(layout_central)
-		self.webview.load(QtCore.QUrl(os.path.join(sys.path[0],u"FotoPreProcessorOSM.html")))
+		self.webview.load(QtCore.QUrl(os.path.join(sys.path[0],"FotoPreProcessorOSM.html")))
 		self.webview.show()
 	
 	
@@ -524,6 +540,44 @@ Might be empty."""
 		return location
 	
 	
+	def searchLocation(self):
+		"""Search for the term given in self.edit_search using OSM Nominatim."""
+		results = json.loads(
+			urllib.request.urlopen(
+				"https://nominatim.openstreetmap.org/search?" +
+				urllib.parse.urlencode({"q":self.edit_search.text(),"format":"json"})
+			).read().decode()
+		)
+		names     = [i["display_name"] for i in results]
+		latitude  = [i["lat"] for i in results]
+		longitude = [i["lon"] for i in results]
+		
+		if len(names) == 0:
+			# no matches found, inform user
+			QtGui.QMessageBox.information(
+				self,
+				QtCore.QCoreApplication.translate("Dialog","GeoSearch Results"),
+				QtCore.QCoreApplication.translate("Dialog","The search yielded no results.")
+			)
+		elif len(names) == 1:
+			# one matching location found: silently set location
+			self.setLocation(latitude[0],longitude[0])
+		else:
+			# more than one match: ask user which one to choose
+			dialog_results = QtGui.QInputDialog(self)
+			dialog_results.setOption(QtGui.QInputDialog.UseListViewForComboBoxItems,True)
+			dialog_results.setComboBoxEditable(False)
+			dialog_results.setComboBoxItems(names)
+			dialog_results.setWindowTitle(QtCore.QCoreApplication.translate("Dialog","GeoSearch Results"))
+			dialog_results.setLabelText(QtCore.QCoreApplication.translate("Dialog","The following locations were found:"))
+			if dialog_results.exec_() == QtGui.QDialog.Accepted:
+				try:
+					i = names.index(dialog_results.textValue())
+					self.setLocation(latitude[i],longitude[i],0)
+				except ValueError:
+					pass
+	
+	
 	def addLocation(self):
 		"""Add a location bookmark for currently set location.
 
@@ -531,31 +585,31 @@ This opens a dialog to let the user either choose or type in a new name."""
 		latitude  = self.spin_latitude.value()
 		longitude = self.spin_longitude.value()
 		lst_names = []
-		for i in xrange(0,self.list_locations.count()):
+		for i in range(0,self.list_locations.count()):
 			lst_names.append(self.list_locations.item(i).text())
 		
 		(name,ok) = QtGui.QInputDialog.getItem(self,
-			QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Add new Named Location"),
-			QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Please provide a name for currently set location:"),
+			QtCore.QCoreApplication.translate("GeoLookUpDialog","Add new Named Location"),
+			QtCore.QCoreApplication.translate("GeoLookUpDialog","Please provide a name for currently set location:"),
 			lst_names,0,True
 		)
 		if ok:
 			if name in lst_names:
 				answer = QtGui.QMessageBox.question(
 					self,
-					QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"Overwriting Existing Name"),
-					QtCore.QCoreApplication.translate(u"GeoLookUpDialog",u"A location with that name exists. Shall it be overwritten?"),
+					QtCore.QCoreApplication.translate("GeoLookUpDialog","Overwriting Existing Name"),
+					QtCore.QCoreApplication.translate("GeoLookUpDialog","A location with that name exists. Shall it be overwritten?"),
 					QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
 				)
 				if answer == QtGui.QMessageBox.Yes:
 					items = self.list_locations.findItems(name,QtCore.Qt.MatchExactly)
 					items[0].setText(name)
-					items[0].setToolTip(u"{0}, {1}".format(latitude,longitude))
+					items[0].setToolTip("{0}, {1}".format(latitude,longitude))
 					self.bookmarks.writeLocation(name,latitude,longitude)
 			else:
 				item = QtGui.QListWidgetItem()
 				item.setText(name)
-				item.setToolTip(u"{0}, {1}".format(latitude,longitude))
+				item.setToolTip("{0}, {1}".format(latitude,longitude))
 				self.list_locations.addItem(item)
 				self.bookmarks.writeLocation(name,latitude,longitude)
 	
@@ -580,11 +634,11 @@ delete button is disabled. Otherwise it is enabled."""
 	def populateJavaScriptWindowObject(self):
 		"""Establish connection between Javascript of FotoPreProcessorOSM.html and lat/lon spinboxes."""
 		self.webview.page().mainFrame().addToJavaScriptWindowObject(
-			u"spin_latitude",
+			"spin_latitude",
 			self.spin_latitude
 		)
 		self.webview.page().mainFrame().addToJavaScriptWindowObject(
-			u"spin_longitude",
+			"spin_longitude",
 			self.spin_longitude
 		)
 	
@@ -593,7 +647,7 @@ delete button is disabled. Otherwise it is enabled."""
 		"""Call FotoPreProcessorOSM.html Javascript to center map on given coordinates."""
 		try:
 			self.webview.page().mainFrame().evaluateJavaScript(
-				u"centerOnLatLon({0},{1},null);".format(
+				"centerOnLatLon({0},{1},null);".format(
 					float(latitude),
 					float(longitude)
 				)
@@ -612,13 +666,13 @@ delete button is disabled. Otherwise it is enabled."""
 			self.button_add.setEnabled(True)
 			self.button_add.setDisabled(False)
 			self.webview.page().mainFrame().evaluateJavaScript(
-				u"setMarker({0},{1});".format(
+				"setMarker({0},{1});".format(
 					latitude,
 					longitude
 				)
 			)
-			for i in xrange(0,self.list_locations.count()):
-				tooltip = self.list_locations.item(i).toolTip().split(u", ")
+			for i in range(0,self.list_locations.count()):
+				tooltip = self.list_locations.item(i).toolTip().split(", ")
 				if latitude == float(tooltip[0]) and longitude == float(tooltip[1]):
 					self.list_locations.setCurrentRow(i)
 					break
@@ -632,7 +686,7 @@ Called by the bookmark list's signal itemDoubleClicked(QListWidgetItem*).
 Expects the item's tooltip to contain coordinates seperated by ", ".
 
 Sets latitude and longitude and places a marker."""
-		str_tooltip = item.toolTip().split(u", ")
+		str_tooltip = item.toolTip().split(", ")
 		try:
 			self.spin_latitude.setValue(float(str_tooltip[0]))
 			self.spin_longitude.setValue(float(str_tooltip[1]))
@@ -645,12 +699,12 @@ Sets latitude and longitude and places a marker."""
 		"""Save locations to the application settings."""
 		if self.bookmarks.wasChanged:
 			settings = QtCore.QSettings()
-			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 			bookmarks = list()
 			for name,(latitude,longitude) in self.bookmarks.listLocations():
-				bookmarks.append(u"{0} {1} {2}".format(latitude,longitude,name))
+				bookmarks.append("{0} {1} {2}".format(latitude,longitude,name))
 			if len(bookmarks) == 1: bookmarks = bookmarks[0]
-			settings.setValue(u"LocationBookmarks",bookmarks)
+			settings.setValue("LocationBookmarks",bookmarks)
 
 
 
@@ -665,7 +719,7 @@ In addition, a plain list export was added to enable interaction with QSettings.
 	def __init__(self):
 		"""Constructor; initialise fields."""
 		self.set_database = set()
-		self.str_filename = unicode()
+		self.str_filename = str()
 		self.bool_changed = False
 	
 	
@@ -678,11 +732,11 @@ In addition, a plain list export was added to enable interaction with QSettings.
 		"""Load and process given file and populate the internal string database."""
 		if filename != None:
 			self.set_database.clear()
-			filename = unicode(filename)
+			filename = str(filename)
 			try:
-				with codecs.open(filename,u"r",u"utf-8") as f:
+				with codecs.open(filename,"r","utf-8") as f:
 					for line in f:
-						self.set_database.add(unicode(line.strip()))
+						self.set_database.add(str(line.strip()))
 			except:
 				pass
 			self.str_filename = filename
@@ -696,7 +750,7 @@ list_strings is expected to be a tuple or list of unicode strings."""
 		try:    list_strings = tuple(list_strings)
 		except: list_strings = tuple()
 		self.set_database.clear()
-		for item in list_strings: self.set_database.add(unicode(item.strip()))
+		for item in list_strings: self.set_database.add(str(item.strip()))
 	
 	
 	def strings(self):
@@ -704,21 +758,21 @@ list_strings is expected to be a tuple or list of unicode strings."""
 		return tuple(self.set_database)
 	
 	
-	def add(self,string=unicode()):
+	def add(self,string=str()):
 		"""Add a string to the database. If the string already exists, nothing is changed."""
 		try:
 			l_old = len(self.set_database)
-			self.set_database.add(unicode(string))
+			self.set_database.add(str(string))
 			if l_old != len(self.set_database):
 				self.bool_changed = True
 		except:
 			pass
 	
 	
-	def delete(self,string=unicode()):
+	def delete(self,string=str()):
 		"""Delete a string from the database. Does nothing if the string doesn't exist."""
 		try:
-			self.set_database.remove(unicode(string))
+			self.set_database.remove(str(string))
 		except:
 			pass
 	
@@ -736,9 +790,9 @@ This behaviour can be overridden by setting force=True."""
 			if self.bool_changed or bool(force):
 				lst_database = list(self.set_database)
 				lst_database.sort()
-				with codecs.open(filename,u"w",u"utf-8") as f:
+				with codecs.open(filename,"w","utf-8") as f:
 					for string in lst_database:
-						f.write(u"{0}\n".format(string))
+						f.write("{0}\n".format(string))
 		except:
 			pass
 

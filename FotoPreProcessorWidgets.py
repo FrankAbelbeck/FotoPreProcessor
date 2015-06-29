@@ -1,8 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorWidgets: custom dock widgets and application/settings dialogs
-Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -20,6 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 $Id$
+
+2015-06-16: migration to Python3
 """
 
 import subprocess,sys,os.path,codecs,re,time
@@ -37,14 +39,16 @@ class FPPGeoTaggingDock(QtGui.QDockWidget):
 
 Features: Floatable | Movable | Closable
 Attributes: Delete on close"""
-		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate(u"DockWidgets",u"GeoTagging"))
+		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate("DockWidgets","GeoTagging"))
 		
 		self.setFeatures(QtGui.QDockWidget.AllDockWidgetFeatures)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
 		#
 		# setup GUI
 		#
-		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Look-Up..."))
+		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","Look-Up... (m)"))
+		button_lookUp.setShortcut(QtGui.QKeySequence("m"))
+		
 		box_stdButtons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Reset)
 		box_stdButtons.addButton(button_lookUp,QtGui.QDialogButtonBox.ActionRole)
 		self.button_reset = box_stdButtons.button(QtGui.QDialogButtonBox.Reset)
@@ -53,41 +57,41 @@ Attributes: Delete on close"""
 		self.spinbox_latitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_latitude.setRange(-85,85)
 		self.spinbox_latitude.setDecimals(8)
-		self.spinbox_latitude.setSuffix(u" °")
+		self.spinbox_latitude.setSuffix(" °")
 		self.spinbox_latitude.setSingleStep(1)
 		self.spinbox_latitude.setWrapping(True)
-		self.spinbox_latitude.setSpecialValueText(QtCore.QCoreApplication.translate(u"DockWidgets",u"undefined"))
+		self.spinbox_latitude.setSpecialValueText(QtCore.QCoreApplication.translate("DockWidgets","undefined"))
 		self.spinbox_latitude.setKeyboardTracking(False)
 		
 		self.spinbox_longitude = QtGui.QDoubleSpinBox()
 		self.spinbox_longitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_longitude.setRange(-180,180)
 		self.spinbox_longitude.setDecimals(8)
-		self.spinbox_longitude.setSuffix(u" °")
+		self.spinbox_longitude.setSuffix(" °")
 		self.spinbox_longitude.setSingleStep(1)
 		self.spinbox_longitude.setWrapping(True)
-		self.spinbox_longitude.setSpecialValueText(QtCore.QCoreApplication.translate(u"DockWidgets",u"undefined"))
+		self.spinbox_longitude.setSpecialValueText(QtCore.QCoreApplication.translate("DockWidgets","undefined"))
 		self.spinbox_longitude.setKeyboardTracking(False)
 		
 		self.spinbox_elevation = QtGui.QDoubleSpinBox()
 		self.spinbox_elevation.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_elevation.setRange(-11000,9000)
 		self.spinbox_elevation.setDecimals(1)
-		self.spinbox_elevation.setSuffix(u" m")
+		self.spinbox_elevation.setSuffix(" m")
 		self.spinbox_elevation.setSingleStep(1)
 		self.spinbox_elevation.setKeyboardTracking(False)
 		
 		layout_coordinates = QtGui.QFormLayout()
 		layout_coordinates.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"Latitude:"),
+			QtCore.QCoreApplication.translate("DockWidgets","Latitude:"),
 			self.spinbox_latitude
 		)
 		layout_coordinates.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"Longitude:"),
+			QtCore.QCoreApplication.translate("DockWidgets","Longitude:"),
 			self.spinbox_longitude
 		)
 		layout_coordinates.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"Elevation:"),
+			QtCore.QCoreApplication.translate("DockWidgets","Elevation:"),
 			self.spinbox_elevation
 		)
 		
@@ -160,13 +164,13 @@ Attributes: Delete on close"""
 			dlg.setLocation(latitude,longitude,elevation)
 		else:
 			settings = QtCore.QSettings()
-			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 			
-			(latitude,ok) = settings.value(u"DefaultLatitude",52.374444).toFloat()
-			if not ok: latitude = 52.374444
+			try:    latitude = float(settings.value("DefaultLatitude",52.374444))
+			except: latitude = 52.374444
 			
-			longitude,ok = settings.value(u"DefaultLongitude",9.738611).toFloat()
-			if not ok: longitude = 9.738611
+			try:    longitude = float(settings.value("DefaultLongitude",9.738611))
+			except: longitude = 9.738611
 			
 			dlg.setLocation(latitude,longitude,0.0)
 		
@@ -208,7 +212,7 @@ It should be a tuple of valid timezone names like "Europe/Berlin".
 
 Features: Floatable | Movable | Closable
 Attributes: Delete on close"""
-		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate(u"DockWidgets",u"Timezone Correction"))
+		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate("DockWidgets","Timezone Correction"))
 		
 		self.setFeatures(QtGui.QDockWidget.AllDockWidgetFeatures)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
@@ -219,11 +223,11 @@ Attributes: Delete on close"""
 		#
 		# setup GUI
 		#
-		self.button_fromTz = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"by location"))
-		self.button_fromTz.setToolTip(QtCore.QCoreApplication.translate(u"DockWidgets",u"Use given coordinates to estimate timezone."))
+		self.button_fromTz = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","by location"))
+		self.button_fromTz.setToolTip(QtCore.QCoreApplication.translate("DockWidgets","Use given coordinates to estimate timezone."))
 
-		self.button_toTz = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"by location"))
-		self.button_toTz.setToolTip(QtCore.QCoreApplication.translate(u"DockWidgets",u"Use given coordinates to estimate timezone."))
+		self.button_toTz = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","by location"))
+		self.button_toTz.setToolTip(QtCore.QCoreApplication.translate("DockWidgets","Use given coordinates to estimate timezone."))
 		
 		self.combo_fromTz = QtGui.QComboBox()
 		self.combo_toTz = QtGui.QComboBox()
@@ -244,11 +248,11 @@ Attributes: Delete on close"""
 		
 		layout_timezones= QtGui.QFormLayout()
 		layout_timezones.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"From:"),
+			QtCore.QCoreApplication.translate("DockWidgets","From:"),
 			layout_fromTz
 		)
 		layout_timezones.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"Shift to:"),
+			QtCore.QCoreApplication.translate("DockWidgets","Shift to:"),
 			layout_toTz
 		)
 		
@@ -291,11 +295,11 @@ Attributes: Delete on close"""
 	
 	
 	def setTimezones(self,fromTz=None,toTz=None):
-		if fromTz == None: fromTz = u"UTC"
-		if toTz == None:   toTz   = u"UTC"
+		if fromTz == None: fromTz = "UTC"
+		if toTz == None:   toTz   = "UTC"
 		try:
-			int_fromTz = self.tz.timezoneIndex(unicode(fromTz))
-			int_toTz   = self.tz.timezoneIndex(unicode(toTz))
+			int_fromTz = self.tz.timezoneIndex(str(fromTz))
+			int_toTz   = self.tz.timezoneIndex(str(toTz))
 		except:
 			pass
 		else:
@@ -345,7 +349,7 @@ Attributes: Delete on close"""
 	
 	
 	def timezones(self):
-		return (unicode(self.combo_fromTz.currentText()),unicode(self.combo_toTz.currentText()))
+		return (str(self.combo_fromTz.currentText()),str(self.combo_toTz.currentText()))
 	
 	
 	def triggerReset(self):
@@ -354,8 +358,8 @@ Attributes: Delete on close"""
 	
 	def updateData(self,value=None):
 		try:
-			fromTz = unicode(self.combo_fromTz.currentText())
-			toTz = unicode(self.combo_toTz.currentText())
+			fromTz = str(self.combo_fromTz.currentText())
+			toTz = str(self.combo_toTz.currentText())
 			self.emit(QtCore.SIGNAL("dockDataUpdated(PyQt_PyObject)"),(fromTz,toTz))
 		except:
 			pass
@@ -374,16 +378,16 @@ class FPPKeywordsDock(QtGui.QDockWidget):
 
 Features: Floatable | Movable | Closable
 Attributes: Delete on close"""
-		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate(u"DockWidgets",u"Keywords"))
+		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate("DockWidgets","Keywords"))
 		
 		settings = QtCore.QSettings()
-		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 		
 		self.setFeatures(QtGui.QDockWidget.AllDockWidgetFeatures)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
 		
 		self.DBKeywords = FotoPreProcessorTools.FPPStringDB()
-		try:    self.DBKeywords.loadList([unicode(i) for i in settings.value(u"Keywords",list()).toStringList()])
+		try:    self.DBKeywords.loadList([str(i) for i in settings.value("Keywords",list())])
 		except: pass
 		
 		#
@@ -395,8 +399,10 @@ Attributes: Delete on close"""
 		self.list_keywords = QtGui.QListWidget()
 		self.list_keywords.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 		
-		self.button_add = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Add..."))
-		self.button_remove = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Remove"))
+		self.button_add = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","Add... (k)"))
+		self.button_remove = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","Remove"))
+		
+		self.button_add.setShortcut(QtGui.QKeySequence("k"))
 		
 		box_stdButtons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Reset)
 		box_stdButtons.addButton(self.button_add,QtGui.QDialogButtonBox.ActionRole)
@@ -438,12 +444,12 @@ Attributes: Delete on close"""
 	def addKeyword(self):
 		tpl_keywords = self.DBKeywords.strings()
 		(keyword,ok) = QtGui.QInputDialog.getItem(self,
-			QtCore.QCoreApplication.translate(u"Dialog",u"Add new Keyword"),
-			QtCore.QCoreApplication.translate(u"Dialog",u"Please provide a keyword for the selected images:"),
+			QtCore.QCoreApplication.translate("Dialog","Add new Keyword"),
+			QtCore.QCoreApplication.translate("Dialog","Please provide a keyword for the selected images:"),
 			tpl_keywords,0,True
 		)
 		if ok:
-			keyword = unicode(keyword)
+			keyword = str(keyword)
 			if not keyword in self.set_keywords:
 				self.DBKeywords.add(keyword)
 				self.set_keywords.add(keyword)
@@ -454,23 +460,23 @@ Attributes: Delete on close"""
 			else:
 				answer = QtGui.QMessageBox.information(
 					self,
-					QtCore.QCoreApplication.translate(u"Dialog",u"Keyword Already Exists"),
-					QtCore.QCoreApplication.translate(u"Dialog",u"Such a keyword is already in the list and hence will be ignored.")
+					QtCore.QCoreApplication.translate("Dialog","Keyword Already Exists"),
+					QtCore.QCoreApplication.translate("Dialog","Such a keyword is already in the list and hence will be ignored.")
 				)
 	
 	
 	def removeKeyword(self):
 		for item in self.list_keywords.selectedItems():
 			self.list_keywords.takeItem(self.list_keywords.row(item))
-			self.set_keywords.remove(unicode(item.text()))
-			self.emit(QtCore.SIGNAL("dockKeywordRemoved(PyQt_PyObject)"),unicode(item.text()))
+			self.set_keywords.remove(str(item.text()))
+			self.emit(QtCore.SIGNAL("dockKeywordRemoved(PyQt_PyObject)"),str(item.text()))
 		self.list_keywords.sortItems()
 		self.updateRemoveButtonState()
 	
 	
 	def setKeywords(self,keywords=tuple()):
 		try:
-			self.set_keywords = set([unicode(i) for i in keywords])
+			self.set_keywords = set([str(i) for i in keywords])
 			self.list_keywords.clear()
 			self.list_keywords.addItems(tuple(self.set_keywords))
 			self.list_keywords.sortItems()
@@ -501,10 +507,10 @@ Attributes: Delete on close"""
 		"""Save keywords DB to the file "FotoPreProcessor.keywords"."""
 		if self.DBKeywords.wasChanged():
 			settings = QtCore.QSettings()
-			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 			keywords = list(self.DBKeywords.strings())
 			if len(keywords) == 1: keywords = keywords[0]
-			settings.setValue(u"Keywords",keywords)
+			settings.setValue("Keywords",keywords)
 		event.accept()
 
 
@@ -517,16 +523,16 @@ class FPPCopyrightDock(QtGui.QDockWidget):
 
 Features: Floatable | Movable | Closable
 Attributes: Delete on close"""
-		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate(u"DockWidgets",u"Copyright Notice"))
+		QtGui.QDockWidget.__init__(self,QtCore.QCoreApplication.translate("DockWidgets","Copyright Notice"))
 		
 		settings = QtCore.QSettings()
-		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 		
 		self.setFeatures(QtGui.QDockWidget.AllDockWidgetFeatures)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
 		
 		self.DBCopyright = FotoPreProcessorTools.FPPStringDB()
-		try:    self.DBCopyright.loadList([unicode(i) for i in settings.value(u"Copyright",list()).toStringList()])
+		try:    self.DBCopyright.loadList([str(i) for i in settings.value("Copyright",list())])
 		except: pass
 		
 		self.edit_copyright = QtGui.QLineEdit()
@@ -538,7 +544,7 @@ Attributes: Delete on close"""
 		
 		layout_copyright = QtGui.QFormLayout()
 		layout_copyright.addRow(
-			QtCore.QCoreApplication.translate(u"DockWidgets",u"Photographer:"),
+			QtCore.QCoreApplication.translate("DockWidgets","Photographer:"),
 			self.edit_copyright
 		)
 		
@@ -564,9 +570,9 @@ Attributes: Delete on close"""
 		self.setCopyright()
 	
 	
-	def setCopyright(self,notice=unicode()):
+	def setCopyright(self,notice=str()):
 		try:
-			notice = unicode(notice)
+			notice = str(notice)
 			if len(notice) > 0:
 				self.DBCopyright.add(notice)
 				self.completer.model().setStringList(self.DBCopyright.strings())
@@ -576,7 +582,7 @@ Attributes: Delete on close"""
 	
 	
 	def copyright(self):
-		return unicode(self.edit_copyright.text())
+		return str(self.edit_copyright.text())
 	
 	
 	def triggerReset(self,button=None):
@@ -584,7 +590,7 @@ Attributes: Delete on close"""
 	
 	
 	def updateData(self):
-		notice = unicode(self.edit_copyright.text())
+		notice = str(self.edit_copyright.text())
 		self.emit(QtCore.SIGNAL("dockDataUpdated(PyQt_PyObject)"),notice)
 		self.DBCopyright.add(notice)
 		self.completer.model().setStringList(self.DBCopyright.strings())
@@ -598,10 +604,10 @@ Attributes: Delete on close"""
 		"""Save copyright strings DB to the file "FotoPreProcessor.copyright"."""
 		if self.DBCopyright.wasChanged():
 			settings = QtCore.QSettings()
-			settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 			copyrights = list(self.DBCopyright.strings())
 			if len(copyrights) == 1: copyrights = copyrights[0]
-			settings.setValue(u"Copyright",copyrights)
+			settings.setValue("Copyright",copyrights)
 		event.accept()
 
 
@@ -617,7 +623,7 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		
 		self.box_stdButtons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Cancel)
 		self.button_execute = self.box_stdButtons.addButton(
-			QtCore.QCoreApplication.translate(u"Dialog",u"Execute"),
+			QtCore.QCoreApplication.translate("Dialog","Execute"),
 			QtGui.QDialogButtonBox.ActionRole
 		)
 		
@@ -641,14 +647,14 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		self.lst_commands = list()
 		
 		self.progressbar.hide()
-		self.setStyleSheet(u":disabled { color: gray; }")
+		self.setStyleSheet(":disabled { color: gray; }")
 		self.bool_isRunning = None
 	
 	
 	def addCommand(self,command=tuple()):
 		try:
 			self.lst_commands.append(tuple(command))
-			self.konsole.appendPlainText(u" ".join(tuple(command))+u"\n")
+			self.konsole.appendPlainText(" ".join(tuple(command))+"\n")
 		except:
 			pass
 	
@@ -671,22 +677,22 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		self.box_stdButtons.removeButton(self.button_execute)
 		
 		self.progressbar.reset()
-		self.progressbar.setRange(0,len(self.lst_commands))
-		self.progressbar.setFormat(u"%v/%m")
+		self.progressbar.setRange(0,len(self.lst_commands)-1)
+		self.progressbar.setFormat("%v/%m")
 		self.progressbar.show()
 		self.konsole.clear()
 		
 		settings = QtCore.QSettings()
-		settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 		
 		self.bool_isRunning = True
 		for command in self.lst_commands:
 			if not self.bool_isRunning:
 				break
 			try:
-				self.konsole.appendPlainText(subprocess.check_output(command))
+				self.konsole.appendPlainText(subprocess.check_output(command).decode())
 			except:
-				pass
+				print("error while appending exiftool output:",sys.exc_info())
 			self.progressbar.setValue(self.progressbar.value()+1)
 			QtCore.QCoreApplication.processEvents() # make cancel button responsive...?
 		
@@ -711,7 +717,7 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.bool_clearKeywords = False
 		self.bool_clearCopyright = False
 		self.settings = QtCore.QSettings()
-		self.settings.setIniCodec(QtCore.QTextCodec.codecForName(u"UTF-8"))
+		self.settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
 		
 		filesystemmodel = QtGui.QFileSystemModel()
 		filesystemmodel.setFilter(QtCore.QDir.NoDotAndDotDot | QtCore.QDir.AllDirs)
@@ -726,12 +732,12 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.edit_gimp = QtGui.QLineEdit()
 		self.edit_gimp.setCompleter(filecompleter)
 		
-		button_find_exiftool = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"Dialog",u"..."))
-		button_find_gimp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"Dialog",u"..."))
+		button_find_exiftool = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","..."))
+		button_find_gimp = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","..."))
 		
 		#self.edit_naming = QtGui.QLineEdit()
 		#self.label_naming = QtGui.QLabel()
-		#self.button_help_naming = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"Dialog",u"Help"))
+		#self.button_help_naming = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","Help"))
 		
 		self.spinbox_stepsize = QtGui.QSpinBox()
 		self.spinbox_stepsize.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
@@ -747,7 +753,7 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.spinbox_latitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_latitude.setRange(-85,85)
 		self.spinbox_latitude.setDecimals(8)
-		self.spinbox_latitude.setSuffix(u" °")
+		self.spinbox_latitude.setSuffix(" °")
 		self.spinbox_latitude.setSingleStep(1)
 		self.spinbox_latitude.setWrapping(True)
 		self.spinbox_latitude.setKeyboardTracking(False)
@@ -756,12 +762,12 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.spinbox_longitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
 		self.spinbox_longitude.setRange(-180,180)
 		self.spinbox_longitude.setDecimals(8)
-		self.spinbox_longitude.setSuffix(u" °")
+		self.spinbox_longitude.setSuffix(" °")
 		self.spinbox_longitude.setSingleStep(1)
 		self.spinbox_longitude.setWrapping(True)
 		self.spinbox_longitude.setKeyboardTracking(False)
 		
-		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate(u"DockWidgets",u"Look-Up..."))
+		button_lookUp = QtGui.QPushButton(QtCore.QCoreApplication.translate("DockWidgets","Look-Up..."))
 		button_lookUp.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.MinimumExpanding)
 		
 		box_stdButtons = QtGui.QDialogButtonBox(
@@ -771,7 +777,7 @@ class FPPSettingsDialog(QtGui.QDialog):
 		
 		#-----------------------------------------------------------------------
 		
-		group_paths = QtGui.QGroupBox(QtCore.QCoreApplication.translate(u"Dialog",u"Program Paths"))
+		group_paths = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","Program Paths"))
 		layout_exiftool = QtGui.QHBoxLayout()
 		layout_exiftool.addWidget(self.edit_exiftool)
 		layout_exiftool.addWidget(button_find_exiftool)
@@ -779,13 +785,13 @@ class FPPSettingsDialog(QtGui.QDialog):
 		layout_gimp.addWidget(self.edit_gimp)
 		layout_gimp.addWidget(button_find_gimp)
 		layout_paths = QtGui.QFormLayout()
-		layout_paths.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Exiftool:"),layout_exiftool)
-		layout_paths.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"The GIMP:"),layout_gimp)
+		layout_paths.addRow(QtCore.QCoreApplication.translate("Dialog","Exiftool:"),layout_exiftool)
+		layout_paths.addRow(QtCore.QCoreApplication.translate("Dialog","The GIMP:"),layout_gimp)
 		group_paths.setLayout(layout_paths)
 		
 		#-----------------------------------------------------------------------
 		
-		#group_naming = QtGui.QGroupBox(QtCore.QCoreApplication.translate(u"Dialog",u"Naming Scheme"))
+		#group_naming = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","Naming Scheme"))
 		#layout_naming_edit = QtGui.QVBoxLayout()
 		#layout_naming_edit.addWidget(self.edit_naming)
 		#layout_naming_edit.addWidget(self.label_naming)
@@ -797,18 +803,18 @@ class FPPSettingsDialog(QtGui.QDialog):
 		
 		#-----------------------------------------------------------------------
 		
-		group_tuning = QtGui.QGroupBox(QtCore.QCoreApplication.translate(u"Dialog",u"Performance Parameters"))
+		group_tuning = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","Performance Parameters"))
 		layout_tuning = QtGui.QFormLayout()
-		layout_tuning.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Image files read at once:"),self.spinbox_stepsize)
-		layout_tuning.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Characters read at once:"),self.spinbox_readsize)
+		layout_tuning.addRow(QtCore.QCoreApplication.translate("Dialog","Image files read at once:"),self.spinbox_stepsize)
+		layout_tuning.addRow(QtCore.QCoreApplication.translate("Dialog","Characters read at once:"),self.spinbox_readsize)
 		group_tuning.setLayout(layout_tuning)
 		
 		#-----------------------------------------------------------------------
 		
-		group_geotag = QtGui.QGroupBox(QtCore.QCoreApplication.translate(u"Dialog",u"GeoTagging"))
+		group_geotag = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","GeoTagging"))
 		layout_coords = QtGui.QFormLayout()
-		layout_coords.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default latitude:"),self.spinbox_latitude)
-		layout_coords.addRow(QtCore.QCoreApplication.translate(u"Dialog",u"Default longitude:"),self.spinbox_longitude)
+		layout_coords.addRow(QtCore.QCoreApplication.translate("Dialog","Default latitude:"),self.spinbox_latitude)
+		layout_coords.addRow(QtCore.QCoreApplication.translate("Dialog","Default longitude:"),self.spinbox_longitude)
 		layout_geotag = QtGui.QHBoxLayout()
 		layout_geotag.addLayout(layout_coords)
 		layout_geotag.addWidget(button_lookUp)
@@ -890,29 +896,29 @@ class FPPSettingsDialog(QtGui.QDialog):
 		)
 		#-----------------------------------------------------------------------
 		
-		self.setStyleSheet(u":disabled { color: gray; }")
+		self.setStyleSheet(":disabled { color: gray; }")
 		self.resetValues()
 	
 	
 	def resetValues(self):
-		(value,ok) = self.settings.value(u"StepSize",4).toInt()
-		if ok: int_stepsize = value
-		else:  int_stepsize = 4
+		try:    value = int(self.settings.value("StepSize",4))
+		except: value = 4
+		int_stepsize = value
 		
-		(value,ok) = self.settings.value(u"ReadSize",1024).toInt()
-		if ok: int_readsize = value
-		else:  int_readsize = 1024
+		try:    value = int(self.settings.value("ReadSize",1024))
+		except: value = 1024
+		int_readsize = value
 		
-		(value,ok) = self.settings.value(u"DefaultLatitude",52.374444).toFloat()
-		if ok: float_latitude = value
-		else:  float_latitude = 52.374444
+		try:    value = float(self.settings.value("DefaultLatitude",52.374444))
+		except: value = 52.374444
+		float_latitude = value
 		
-		(value,ok) = self.settings.value(u"DefaultLongitude",9.738611).toFloat()
-		if ok: float_longitude = value
-		else:  float_longitude = 9.738611
+		try:    value = float(self.settings.value("DefaultLongitude",9.738611))
+		except: value = 9.738611
+		float_longitude = value
 		
-		self.edit_exiftool.setText(self.settings.value(u"ExiftoolPath",u"/usr/bin/exiftool").toString())
-		self.edit_gimp.setText(self.settings.value(u"TheGimpPath",u"/usr/bin/gimp").toString())
+		self.edit_exiftool.setText(self.settings.value("ExiftoolPath","/usr/bin/exiftool"))
+		self.edit_gimp.setText(self.settings.value("TheGimpPath","/usr/bin/gimp"))
 		self.spinbox_stepsize.setValue(int_stepsize)
 		self.spinbox_readsize.setValue(int_readsize)
 		self.spinbox_latitude.setValue(float_latitude)
@@ -922,33 +928,33 @@ class FPPSettingsDialog(QtGui.QDialog):
 	
 	
 	def applyChangesAndAccept(self):
-		self.settings.setValue(u"StepSize",self.spinbox_stepsize.value())
-		self.settings.setValue(u"ReadSize",self.spinbox_readsize.value())
-		self.settings.setValue(u"ExiftoolPath",self.edit_exiftool.text())
-		self.settings.setValue(u"TheGimpPath",self.edit_gimp.text())
-		self.settings.setValue(u"DefaultLatitude",self.spinbox_latitude.value())
-		self.settings.setValue(u"DefaultLongitude",self.spinbox_longitude.value())
+		self.settings.setValue("StepSize",self.spinbox_stepsize.value())
+		self.settings.setValue("ReadSize",self.spinbox_readsize.value())
+		self.settings.setValue("ExiftoolPath",self.edit_exiftool.text())
+		self.settings.setValue("TheGimpPath",self.edit_gimp.text())
+		self.settings.setValue("DefaultLatitude",self.spinbox_latitude.value())
+		self.settings.setValue("DefaultLongitude",self.spinbox_longitude.value())
 		self.button_reset.setEnabled(False)
 		self.accept()
 	
 	
 	def exiftoolChanged(self):
 		self.button_reset.setEnabled(
-			self.edit_exiftool.text() != self.settings.value(u"ExiftoolPath",u"/usr/bin/exiftool").toString()
+			self.edit_exiftool.text() != self.settings.value("ExiftoolPath","/usr/bin/exiftool")
 		)
 	
 	
 	def gimpChanged(self):
 		self.button_reset.setEnabled(
-			self.edit_gimp.text() != self.settings.value(u"TheGimpPath",u"/usr/bin/gimp").toString()
+			self.edit_gimp.text() != self.settings.value("TheGimpPath","/usr/bin/gimp")
 		)
 	
 	
 	def selectExiftool(self):
 		path = QtGui.QFileDialog.getOpenFileName(self,
-			QtCore.QCoreApplication.translate(u"Dialog",u"Select Exiftool Executable"),
+			QtCore.QCoreApplication.translate("Dialog","Select Exiftool Executable"),
 			self.edit_exiftool.text(),
-			u"",u"",
+			"","",
 			QtGui.QFileDialog.DontUseNativeDialog
 		)
 		if len(path) > 0:
@@ -957,9 +963,9 @@ class FPPSettingsDialog(QtGui.QDialog):
 	
 	def selectTheGimp(self):
 		path = QtGui.QFileDialog.getOpenFileName(self,
-			QtCore.QCoreApplication.translate(u"Dialog",u"Select The GIMP Executable"),
+			QtCore.QCoreApplication.translate("Dialog","Select The GIMP Executable"),
 			self.edit_gimp.text(),
-			u"",u"",
+			"","",
 			QtGui.QFileDialog.DontUseNativeDialog
 		)
 		if len(path) > 0:
@@ -967,26 +973,26 @@ class FPPSettingsDialog(QtGui.QDialog):
 	
 	
 	def stepsizeChanged(self):
-		(value,ok) = self.settings.value(u"StepSize",4).toInt()
-		if not ok: value = 4
+		try:    value = int(self.settings.value("StepSize",4))
+		except: value = 4
 		self.button_reset.setEnabled( self.spinbox_stepsize.value() != value )
 	
 	
 	def readsizeChanged(self):
-		(value,ok) = self.settings.value(u"ReadSize",1024).toInt()
-		if not ok: value = 1024
+		try:    value = int(self.settings.value("ReadSize",1024))
+		except: value = 1024
 		self.button_reset.setEnabled( self.spinbox_readsize.value() != value )
 	
 	
 	def latitudeChanged(self):
-		(value,ok) = self.settings.value(u"DefaultLatitude",52.374444).toFloat()
-		if not ok: value = 52.374444
+		try:    value = float(self.settings.value("DefaultLatitude",52.374444))
+		except: value = 52.374444
 		self.button_reset.setEnabled( self.spinbox_latitude.value() != value )
 	
 	
 	def longitudeChanged(self):
-		(value,ok) = self.settings.value(u"DefaultLongitude",9.738611).toFloat()
-		if not ok: value = 9.738611
+		try:    value = float(self.settings.value("DefaultLongitude",9.738611))
+		except: value = 9.738611
 		self.button_reset.setEnabled( self.spinbox_longitude.value() != value )
 	
 	
@@ -1025,20 +1031,20 @@ class FPPAboutDialog(QtGui.QDialog):
 		
 		label_icon = QtGui.QLabel()
 		label_icon.setPixmap(QtGui.QPixmap(
-			os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"icons",u"FPP.png")
+			os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),"icons","FPP.png")
 		))
 		
 		int_revision = 0
-		for filename in (u"FotoPreProcessor.py",u"FotoPreProcessorItem.py",u"FotoPreProcessorTools.py",u"FotoPreProcessorWidgets.py"):
-			with codecs.open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),filename),u"r") as f:
+		for filename in ("FotoPreProcessor.py","FotoPreProcessorItem.py","FotoPreProcessorTools.py","FotoPreProcessorWidgets.py"):
+			with codecs.open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),filename),"r") as f:
 				for line in f:
 					if line.startswith("$Id"):
 						rev = int(re.match(r'^\$Id:\ .*\ (\d+)\ .*',line).groups()[0])
 						if rev > int_revision: int_revision = rev
-		ustr_revision = unicode(int_revision)
+		ustr_revision = str(int_revision)
 		
 		label_info = QtGui.QLabel()
-		label_info.setText(QtCore.QCoreApplication.translate(u"Dialog",u"""<h4>FotoPreProcessor</h4>
+		label_info.setText(QtCore.QCoreApplication.translate("Dialog","""<h4>FotoPreProcessor</h4>
 <p>PyQt4-based (EXIF) metadata management of images in a directory.</p>
 <p>Copyright (C) 2012 Frank Abelbeck &#60;frank.abelbeck@googlemail.com&#62;</p>
 <p>Revision %1</p>""").arg(ustr_revision))
@@ -1051,12 +1057,12 @@ class FPPAboutDialog(QtGui.QDialog):
 		
 		widget_license = QtGui.QPlainTextEdit()
 		widget_license.setReadOnly(True)
-		with open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),u"COPYING"),u"r") as f:
+		with open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),"COPYING"),"r") as f:
 			widget_license.setPlainText(f.read())
 		
 		tabwidget = QtGui.QTabWidget()
-		tabwidget.addTab(widget_info,QtCore.QCoreApplication.translate(u"Dialog",u"General Information"))
-		tabwidget.addTab(widget_license,QtCore.QCoreApplication.translate(u"Dialog",u"License"))
+		tabwidget.addTab(widget_info,QtCore.QCoreApplication.translate("Dialog","General Information"))
+		tabwidget.addTab(widget_license,QtCore.QCoreApplication.translate("Dialog","License"))
 		
 		box_stdButtons = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Close)
 		

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorItem: a custom QListWidgetItem
-Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -68,7 +68,7 @@ icons pixmap. This is actually used in the GUI to mark an item as "edited"."""
 			QtGui.QPixmap(icon)
 		)
 		
-		if bool(index.data(QtCore.Qt.UserRole).toBool()):
+		if bool(index.data(QtCore.Qt.UserRole)):
 			marker = self.icon_changed.pixmap(w_icon,h_icon)
 			w_marker = marker.width()
 			h_marker = marker.height()
@@ -91,14 +91,14 @@ timezones, location (latitude, longitude, elevation) and a set of keywords.
 Appropriate methods for handling and showing these properties are defined, too."""
 	
 	MapStringToOrientation = {
-		u"Standard (normal)": 1,
-		u"Mirror horizontal": 2,
-		u"Rotate 180": 3,
-		u"Mirror vertical": 4,
-		u"Mirror horizontal and rotate 270 CW": 5,
-		u"Rotate 90 CW": 6,
-		u"Mirro horizontal and rotate 90 CW": 7,
-		u"Rotate 270 CW": 8,
+		"Standard (normal)": 1,
+		"Mirror horizontal": 2,
+		"Rotate 180": 3,
+		"Mirror vertical": 4,
+		"Mirror horizontal and rotate 270 CW": 5,
+		"Rotate 90 CW": 6,
+		"Mirror horizontal and rotate 90 CW": 7,
+		"Rotate 270 CW": 8,
 	}
 	
 	SortByName   = 0
@@ -110,22 +110,22 @@ Appropriate methods for handling and showing these properties are defined, too."
 		QtGui.QListWidgetItem.__init__(self,parent,1001)
 		self.pix_thumb = QtGui.QPixmap(1,1)
 		
-		self.str_filename = unicode()
+		self.str_filename = str()
 		self.date_timestamp = None
-		self.str_cameraSettings = unicode()
-		self.str_cameraHardware = unicode()
-		self.str_copyright = unicode()
+		self.str_cameraSettings = str()
+		self.str_cameraHardware = str()
+		self.str_copyright = str()
 		
 		self.int_orientation = 1
-		self.tpl_timezones = (u"UTC",u"UTC")
+		self.tpl_timezones = ("UTC","UTC")
 		self.tpl_location = tuple()
 		self.tpl_keywords = tuple()
 		
 		self.int_saved_orientation = 1
-		self.tpl_saved_timezones = (u"UTC",u"UTC")
+		self.tpl_saved_timezones = ("UTC","UTC")
 		self.tpl_saved_location = tuple()
 		self.tpl_saved_keywords = tuple()
-		self.str_saved_copyright = unicode()
+		self.str_saved_copyright = str()
 		
 		self.int_timeshift = 0
 		self.date_shiftedTimestamp = None
@@ -302,7 +302,7 @@ Note: This is based on a variable which gets updated by updateEditState()."""
 		"""Set filename property."""
 		if filename != None:
 			try:
-				self.str_filename = unicode(filename)
+				self.str_filename = str(filename)
 				self.setText(str_filename)
 				self.updateToolTip()
 			except:
@@ -336,13 +336,13 @@ Expects valid timezone names as strings, e.g. "Europe/Berlin" or "UTC".
 If invalid timezone names are provided, nothing is changed."""
 		if fromTimezone != None and toTimezone != None:
 			try:
-				fromTz = pytz.timezone(unicode(fromTimezone))
-				toTz = pytz.timezone(unicode(toTimezone))
-				t_from = fromTz.localize(self.date_timestamp).strftime(u"%z")
-				t_to = toTz.localize(self.date_timestamp).strftime(u"%z")
+				fromTz = pytz.timezone(str(fromTimezone))
+				toTz = pytz.timezone(str(toTimezone))
+				t_from = fromTz.localize(self.date_timestamp).strftime("%z")
+				t_to = toTz.localize(self.date_timestamp).strftime("%z")
 				m_from = 60*int(t_from[0:3]) + int(t_from[3:5])
 				m_to   = 60*int(t_to[0:3])   + int(t_to[3:5])
-				self.tpl_timezones = (unicode(fromTimezone),unicode(toTimezone))
+				self.tpl_timezones = (str(fromTimezone),str(toTimezone))
 				self.int_timeshift = m_to - m_from
 			except:
 				pass
@@ -425,7 +425,7 @@ An integer as well as a string is accepted:
 
 Horizontal (normal) orientation (=1) is set a default."""
 		try:
-			self.int_orientation = self.MapStringToOrientation[unicode(value)]
+			self.int_orientation = self.MapStringToOrientation[str(value)]
 			self.updateIcon()
 			self.updateEditState()
 			self.updateToolTip()
@@ -485,10 +485,10 @@ Rotation cylce: 1 -> 6 -> 3 -> 8 -> 1"""
 		self.updateToolTip()
 	
 	
-	def addKeyword(self,keyword=unicode()):
+	def addKeyword(self,keyword=str()):
 		try:
 			keywords = list(self.tpl_keywords)
-			keywords.append(unicode(keyword))
+			keywords.append(str(keyword))
 			self.tpl_keywords = tuple(keywords)
 			self.updateEditState()
 			self.updateToolTip()
@@ -496,10 +496,10 @@ Rotation cylce: 1 -> 6 -> 3 -> 8 -> 1"""
 			pass
 	
 	
-	def removeKeyword(self,keyword=unicode()):
+	def removeKeyword(self,keyword=str()):
 		try:
 			keywords = list(self.tpl_keywords)
-			keywords.remove(unicode(keyword))
+			keywords.remove(str(keyword))
 			self.tpl_keywords = tuple(keywords)
 			self.updateEditState()
 			self.updateToolTip()
@@ -513,7 +513,7 @@ Rotation cylce: 1 -> 6 -> 3 -> 8 -> 1"""
 The parameter keywords is expected to be a set, list or tuple of strings
 whicht will be converted to a tuple of unicode strings."""
 		try:
-			self.tpl_keywords = tuple([unicode(i) for i in keywords])
+			self.tpl_keywords = tuple([str(i) for i in keywords])
 			self.updateEditState()
 			self.updateToolTip()
 		except:
@@ -525,7 +525,7 @@ whicht will be converted to a tuple of unicode strings."""
 		return self.tpl_keywords
 	
 	
-	def setCameraSettings(self,settings=unicode()):
+	def setCameraSettings(self,settings=str()):
 		"""Set camera settings string. Expects a unicode string.
 
 Recommended settings: focal length, aperture, shutter speed and ISO level, e.g.:
@@ -533,7 +533,7 @@ Recommended settings: focal length, aperture, shutter speed and ISO level, e.g.:
     "35 mm, f/5.6, 1/250 s, ISO 100" """
 		if settings != None:
 			try:
-				self.str_cameraSettings = unicode(settings)
+				self.str_cameraSettings = str(settings)
 				self.updateToolTip()
 			except:
 				pass
@@ -543,7 +543,7 @@ Recommended settings: focal length, aperture, shutter speed and ISO level, e.g.:
 		return self.str_cameraSettings
 	
 	
-	def setCameraHardware(self,hardware=unicode()):
+	def setCameraHardware(self,hardware=str()):
 		"""Set camera hardware string. Expects a unicode string.
 
 Hardware: Camera model and/or lens type, e.g.:
@@ -551,7 +551,7 @@ Hardware: Camera model and/or lens type, e.g.:
     "Canon EOS 450D, Canon EF-S 15-85mm f/3.5-5.6 IS USM" """
 		if hardware != None:
 			try:
-				self.str_cameraHardware = unicode(hardware)
+				self.str_cameraHardware = str(hardware)
 				self.updateToolTip()
 			except:
 				pass
@@ -561,11 +561,11 @@ Hardware: Camera model and/or lens type, e.g.:
 		return self.str_cameraHardware
 	
 	
-	def setCopyright(self,notice=unicode()):
+	def setCopyright(self,notice=str()):
 		"""Set copyright string. Expects a unicode string."""
 		if notice != None:
 			try:
-				self.str_copyright = unicode(notice)
+				self.str_copyright = str(notice)
 				self.updateEditState()
 				self.updateToolTip()
 			except:
@@ -654,54 +654,54 @@ in order to create a new item icon."""
 	
 	def updateToolTip(self):
 		"""Update the item's tooltip."""
-		str_tooltip = u"<h4>{0}</h4>".format(self.str_filename)
+		str_tooltip = "<h4>{0}</h4>".format(self.str_filename)
 		
 		if self.date_timestamp != None:
 			if self.bool_editedTimezones:
-				str_tooltip += u"<p><font color=\"blue\">{0}</font> ({1} UTC)</p>".format(
-					self.date_shiftedTimestamp.strftime(u"%Y-%m-%d %H:%M:%S"),
-					self.date_utcTimestamp.strftime(u"%Y-%m-%d %H:%M:%S"),
+				str_tooltip += "<p><font color=\"blue\">{0}</font> ({1} UTC)</p>".format(
+					self.date_shiftedTimestamp.strftime("%Y-%m-%d %H:%M:%S"),
+					self.date_utcTimestamp.strftime("%Y-%m-%d %H:%M:%S"),
 				)
 			else:
-				str_tooltip += u"<p>{0}</p>".format(self.date_timestamp.strftime(u"%Y-%m-%d %H:%M:%S"))
+				str_tooltip += "<p>{0}</p>".format(self.date_timestamp.strftime("%Y-%m-%d %H:%M:%S"))
 		
 		if len(self.str_cameraSettings) != 0:
-			str_tooltip += u"<p>{0}</p>".format(self.str_cameraSettings)
+			str_tooltip += "<p>{0}</p>".format(self.str_cameraSettings)
 		if len(self.str_cameraHardware) != 0:
-			str_tooltip += u"<p>{0}</p>".format(self.str_cameraHardware)
+			str_tooltip += "<p>{0}</p>".format(self.str_cameraHardware)
 		
 		if len(self.tpl_keywords) > 0:
 			if self.bool_editedKeywords:
-				str_tooltip += u"<p><font color=\"blue\">{0}</font></p>".format(u", ".join(self.tpl_keywords))
+				str_tooltip += "<p><font color=\"blue\">{0}</font></p>".format(", ".join(self.tpl_keywords))
 			else:
-				str_tooltip += u"<p>{0}</p>".format(", ".join(self.tpl_keywords))
+				str_tooltip += "<p>{0}</p>".format(", ".join(self.tpl_keywords))
 		
 		if len(self.tpl_location) == 3:
 			if self.bool_editedLocation:
-				str_tooltip += u"<p><font color=\"blue\">"
+				str_tooltip += "<p><font color=\"blue\">"
 			else:
-				str_tooltip += u"<p>"
-			str_tooltip += u"{0:+.3f}, {1:+.3f}, {2:+.0f} m {3}".format(
+				str_tooltip += "<p>"
+			str_tooltip += "{0:+.3f}, {1:+.3f}, {2:+.0f} m {3}".format(
 					self.tpl_location[0],
 					self.tpl_location[1],
 					self.tpl_location[2],
-					QtCore.QCoreApplication.translate(u"ItemToolTip",u"Elevation")
+					QtCore.QCoreApplication.translate("ItemToolTip","Elevation")
 			)
 			if self.bool_editedLocation:
 				if len(self.tpl_saved_location) == 3:
-					str_tooltip += u"</font> ({0:+.3f}, {1:+.3f}, {2:+.0f} m {3})".format(
+					str_tooltip += "</font> ({0:+.3f}, {1:+.3f}, {2:+.0f} m {3})".format(
 						self.tpl_saved_location[0],
 						self.tpl_saved_location[1],
 						self.tpl_saved_location[2],
-						QtCore.QCoreApplication.translate(u"ItemToolTip",u"Elevation")
+						QtCore.QCoreApplication.translate("ItemToolTip","Elevation")
 					)
-			str_tooltip += u"</p>"
+			str_tooltip += "</p>"
 		
 		if len(self.str_copyright) > 0:
 			if self.bool_editedCopyright:
-				str_tooltip += u"<p><font color=\"blue\">&#169; {0}</font></p>".format(self.str_copyright)
+				str_tooltip += "<p><font color=\"blue\">&#169; {0}</font></p>".format(self.str_copyright)
 			else:
-				str_tooltip += u"<p>&#169; {0}</p>".format(self.str_copyright)
+				str_tooltip += "<p>&#169; {0}</p>".format(self.str_copyright)
 		
 		self.setToolTip(str_tooltip)
 	
