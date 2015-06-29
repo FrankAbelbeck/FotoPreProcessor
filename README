@@ -1,9 +1,8 @@
 --------------------------------------------------------------------------------
 FotoPreProcessor, a PyQT4-based program to manage (EXIF) metadata of images
-$Id$
 --------------------------------------------------------------------------------
 
-Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -29,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2012-10-18
+Version: 2015-06-29
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -89,16 +88,15 @@ Requirements
 --------------------------------------------------------------------------------
 
 Which programs and libraries are needed?
-(In parantheses: versions this program was created/tested with)
+(In parantheses: Gentoo Linux versions this program was created/tested with)
 
-Python   (2.7)
-pytz     (2012c)
-exiftool (8.900.0)
-PyQt4    (4.9.1)
-file     (5.11)
+Python   (3.3.5)
+pytz     (2014.10)
+exiftool (9.78)
+PyQt4    (4.11.3)
 
 --------------------------------------------------------------------------------
-Installation
+Installation (Deprecated, Program Tarballs are not Updated Anymore)
 --------------------------------------------------------------------------------
 
 Extract the archive FotoPreProcessor.tar.gz to a directory accessible/writable
@@ -133,8 +131,7 @@ icons/changed.png             icon "wrench" to mark changed images
 icons/unknownPicture2.png     icon "unknown picture"
 COPYING                       GPL v3 license text
 README                        (this file)
-checksums.md5                 MD-5 checksums
-checksums.sha512              SHA-512 checksums
+zone.tab                      time zone info (local copy of timezone-data)
 
 --------------------------------------------------------------------------------
 Changelog
@@ -159,3 +156,10 @@ Changelog
             improvements (flickering during image list update got reduced;
             if a dock gets disabled while selecting multiple images it stays
             disabled until the selection is reset)
+
+2015-06-29: incorporation of many small fixes,
+            update to Python3,
+            new search option for the geolocator,
+            update of README and zone.tab,
+            removal of tarball creation commands inside Makefile,
+            transition to GitHub
