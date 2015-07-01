@@ -28,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2015-06-29
+Version: 2015-07-01
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -163,3 +163,6 @@ Changelog
             update of README and zone.tab,
             removal of tarball creation commands inside Makefile,
             transition to GitHub
+
+2015-07-01: further Python3 porting, improvement of arg handling,
+            updated translation
