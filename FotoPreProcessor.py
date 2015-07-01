@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
+LICENSE="""
 FotoPreProcessor: manage (EXIF) metadata of images in a directory
 Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
@@ -16,9 +16,8 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-$Id$
 """
+VERSION="2015-07-01"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
@@ -1640,7 +1639,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	#-----------------------------------------------------------------------
 	
 	def aboutDialog(self):
-		dlg = FotoPreProcessorWidgets.FPPAboutDialog()
+		dlg = FotoPreProcessorWidgets.FPPAboutDialog(VERSION)
 		dlg.exec_()
 
 	
@@ -1649,7 +1648,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 
 
 
-def parseArguments(set_args=set()):
+def parseArguments(progpath,set_args):
 	bool_help = True
 	bool_license = True
 	bool_version = True
@@ -1663,7 +1662,7 @@ def parseArguments(set_args=set()):
 			except:
 				bool_help = False
 	if bool_help:
-		print(app.translate("CLI","""Usage: %1 [-h][-l][-v][DIR]
+		print(app.translate("CLI","""Usage: {progname} [-h][-l][-v][DIR]
 
 PyQt4-based (EXIF) metadata management of images in a directory.
 
@@ -1673,13 +1672,13 @@ Optional arguments:
    -l, --license   show full license notice and exit
    -v, --version   show version information and exit
 
-Copyright (C) 2012 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This program comes with ABSOLUTELY NO WARRANTY. It is free software,
 and you are welcome to redistribute it under certain conditions
 (see argument --license for details).
-""").arg(os.path.basename(path_self)))
-
+""").format(progname=os.path.basename(progpath)))
+	
 	# check if license was requested; if yes, display license and exit without error
 	try:
 		set_args.remove("-l")
@@ -1690,13 +1689,7 @@ and you are welcome to redistribute it under certain conditions
 				bool_license = False
 	if bool_license:
 		print(app.translate("CLI","License information:"))
-		with codecs.open(qargs[0],"r") as f:
-			for i in range(0,4): f.readline() # skip first four lines
-			for line in f:
-				if not line.startswith("$Id"): # read until version id encountered
-					print(line.strip())
-				else:
-					break
+		print(LICENSE)
 	
 	# check if version was requested; if yes, display version and exit without error
 	try:
@@ -1707,53 +1700,42 @@ and you are welcome to redistribute it under certain conditions
 			except:
 				bool_version = False
 	if bool_version:
-		int_revision = 0
-		for filename in ("FotoPreProcessor.py","FotoPreProcessorItem.py","FotoPreProcessorTools.py","FotoPreProcessorWidgets.py"):
-			with codecs.open(os.path.join(sys.path[0],filename),"r") as f:
-				for line in f:
-					if line.startswith("$Id"):
-						rev = int(re.match(r'^\$Id:\ .*\ (\d+)\ .*',line).groups()[0])
-						if rev > int_revision: int_revision = rev
-		print(app.translate("CLI","SVN revision: %1").arg(str(int_revision)))
+		print(app.translate("CLI","Version:"),VERSION)
 	
-	return bool_help or bool_license or bool_version,set_args
-
+	return not(bool_help or bool_license or bool_version)
 
 
 if __name__ == '__main__':
 	# setup Qt application and pass commandline arguments
 	app = QtGui.QApplication(sys.argv)
 	
+	# initialise application information used by settings
+	app.setApplicationName("FotoPreProcessor")
+	app.setOrganizationName("Abelbeck");
+	app.setOrganizationDomain("abelbeck.wordpress.com");
+	
+	# initialise translation service
+	system_locale = str(QtCore.QLocale.system().name()[0:2])
+	qtTranslator = QtCore.QTranslator()
+	qtTranslator.load(
+		"qt_"+system_locale,
+		str(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath))
+	)
+	fppTranslator = QtCore.QTranslator()
+	fppTranslator.load(
+		"FotoPreProcessor."+system_locale,
+		os.path.join(sys.path[0],"i18n")
+	)
+	app.installTranslator(qtTranslator)
+	app.installTranslator(fppTranslator)
+	
 	# obtain command line arguments, filtered by QApplication
 	qargs = [str(i) for i in app.arguments()]
-	path_self = qargs[0]
-	
-	bool_stop,set_args = parseArguments(set(qargs[1:]))
-	if not bool_stop:
-		# argument parsing returned False, i.e.no information was requested
+	progpath = qargs[0]
+	set_args = set(qargs[1:])
+	if parseArguments(progpath,set_args):
+		# argument parsing returned True, i.e.no information was requested
 		# via CLI, and therefore GUI is allowed to start:
-		
-		# initialise application information used by settings
-		app.setApplicationName("FotoPreProcessor")
-		app.setOrganizationName("Abelbeck");
-		app.setOrganizationDomain("abelbeck.wordpress.com");
-		
-		# initialise translation service
-		system_locale = str(QtCore.QLocale.system().name()[0:2])
-		qtTranslator = QtCore.QTranslator()
-		qtTranslator.load(
-			"qt_"+system_locale,
-			str(QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.TranslationsPath))
-		)
-		
-		fppTranslator = QtCore.QTranslator()
-		fppTranslator.load(
-			"FotoPreProcessor."+system_locale,
-			os.path.join(sys.path[0],"i18n")
-		)
-		app.installTranslator(qtTranslator)
-		app.installTranslator(fppTranslator)
-		
 		# create main window and set directory from remaining arguments
 		mainwindow = FPPMainWindow()
 		if mainwindow.isReady():
@@ -1768,7 +1750,6 @@ if __name__ == '__main__':
 						break
 				except:
 					pass
-			
 			# start event loop, i.e. start application
 			app.exec_()
 

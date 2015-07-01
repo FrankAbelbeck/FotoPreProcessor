@@ -19,8 +19,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-$Id$
-
 2015-06-16: migration to Python3
 """
 
@@ -1025,29 +1023,20 @@ class FPPSettingsDialog(QtGui.QDialog):
 
 class FPPAboutDialog(QtGui.QDialog):
 	
-	def __init__(self,parent=None):
+	def __init__(self,version,parent=None):
 		"""Constructor; initialise fields, construct GUI."""
 		QtGui.QDialog.__init__(self,parent)
 		
 		label_icon = QtGui.QLabel()
 		label_icon.setPixmap(QtGui.QPixmap(
-			os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),"icons","FPP.png")
+			os.path.join(sys.path[0],"icons","FPP.png")
 		))
-		
-		int_revision = 0
-		for filename in ("FotoPreProcessor.py","FotoPreProcessorItem.py","FotoPreProcessorTools.py","FotoPreProcessorWidgets.py"):
-			with codecs.open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),filename),"r") as f:
-				for line in f:
-					if line.startswith("$Id"):
-						rev = int(re.match(r'^\$Id:\ .*\ (\d+)\ .*',line).groups()[0])
-						if rev > int_revision: int_revision = rev
-		ustr_revision = str(int_revision)
 		
 		label_info = QtGui.QLabel()
 		label_info.setText(QtCore.QCoreApplication.translate("Dialog","""<h4>FotoPreProcessor</h4>
 <p>PyQt4-based (EXIF) metadata management of images in a directory.</p>
-<p>Copyright (C) 2012 Frank Abelbeck &#60;frank.abelbeck@googlemail.com&#62;</p>
-<p>Revision %1</p>""").arg(ustr_revision))
+<p>Copyright (C) 2012-2015 Frank Abelbeck &#60;frank.abelbeck@googlemail.com&#62;</p>
+<p>Version {version}</p>""").format(version=version))
 		
 		widget_info = QtGui.QWidget()
 		layout_info = QtGui.QHBoxLayout()
@@ -1057,7 +1046,7 @@ class FPPAboutDialog(QtGui.QDialog):
 		
 		widget_license = QtGui.QPlainTextEdit()
 		widget_license.setReadOnly(True)
-		with open(os.path.join(sys.path[0].decode(sys.getfilesystemencoding()),"COPYING"),"r") as f:
+		with open(os.path.join(sys.path[0],"COPYING"),"r") as f:
 			widget_license.setPlainText(f.read())
 		
 		tabwidget = QtGui.QTabWidget()
