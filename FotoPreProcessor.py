@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-VERSION="2015-07-01"
+VERSION="2015-10-25"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
@@ -27,14 +27,14 @@ VERSION="2015-07-01"
 # ...
 # 2012-09-03: last fixes for enhanced version
 # 2015-06-29: update to Python3, location search (geolocator), transition to GitHub
-# 2015-10-25: minor fixes, new feature: change management (changes -> save/load file), upgrade to new signal/slot mechanism
+# 2015-10-25: minor fixes, new feature: change management (changes -> save/load file),
+#             upgrade to new signal/slot mechanism, file naming now configurable
 
 import sys,os,subprocess,time,pytz,datetime,codecs,xml.dom.minidom,base64,re,yaml
 
 from PyQt4 import QtGui, QtCore
 
 import FotoPreProcessorWidgets,FotoPreProcessorItem
-
 
 class FPPClickableLabel(QtGui.QLabel):
 	# new signal/slot mechanism: define emitted signals instead of using SLOT macro
@@ -60,11 +60,8 @@ class FPPClickableLabel(QtGui.QLabel):
 		self.button_exit = QtGui.QPushButton(QtGui.QIcon.fromTheme("window-close"),QtCore.QCoreApplication.translate("Preview","Back"))
 		
 		self.button_prev.clicked.connect(self.floadPrev)
-#		self.connect(self.button_prev,QtCore.SIGNAL('clicked()'),self.loadPrev)
 		self.button_next.clicked.connect(self.floadNext)
-#		self.connect(self.button_next,QtCore.SIGNAL('clicked()'),self.loadNext)
 		self.button_exit.clicked.connect(self.fgoBack)
-#		self.connect(self.button_exit,QtCore.SIGNAL('clicked()'),self.goBack)
 		
 		self.button_prev.setFlat(True)
 		self.button_next.setFlat(True)
@@ -176,6 +173,13 @@ class FPPMainWindow(QtGui.QMainWindow):
 				self.bool_ready = False
 		else:
 			self.bool_ready = True
+		
+		# 2015-10-25: introduced naming scheme config option;
+		#             older versions don't know this, so make sure it is set
+		if settings.value("NamingScheme",None) == None:
+			print("Updating config from older FPP version (+NamingScheme).")
+			settings.setValue("NamingScheme",FotoPreProcessorWidgets.FPPSettingsDialog.DEFAULT_NAMING_SCHEME)
+			settings.setValue("NamingEnabled",True)
 		
 		if self.bool_ready:
 			# executing third-party programs is always a security nightmare...
@@ -393,276 +397,72 @@ class FPPMainWindow(QtGui.QMainWindow):
 		#---------------------------------------------------------------
 		
 		self.list_images.itemSelectionChanged.connect(self.listImagesSelectionChanged)
-#		self.connect(
-#			self.list_images,
-#			QtCore.SIGNAL('itemSelectionChanged()'),
-#			self.listImagesSelectionChanged
-#		)
 		self.list_images.itemChanged.connect(self.listImagesItemChanged)
-#		self.connect(
-#			self.list_images,
-#			QtCore.SIGNAL('itemChanged(QListWidgetItem*)'),
-#			self.listImagesItemChanged
-#		)
 		self.list_images.itemDoubleClicked.connect(self.openPreviewImage)
-#		self.connect(
-#			self.list_images,
-#			QtCore.SIGNAL('itemDoubleClicked(QListWidgetItem*)'),
-#			self.openPreviewImage
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.scroll_image_label.leftClicked.connect(self.closePreviewImage)
-#		self.connect(
-#			self.scroll_image_label,
-#			QtCore.SIGNAL('leftClicked()'), # leftDoubleClicked
-#			self.closePreviewImage
-#		)
-		
 		self.scroll_image_label.goBack.connect(self.closePreviewImage)
-#		self.connect(
-#			self.scroll_image_label,
-#			QtCore.SIGNAL('goBack()'), # exit button triggered
-#			self.closePreviewImage
-#		)
-		
 		self.scroll_image_label.loadNext.connect(self.loadNextPreviewImage)
-#		self.connect(
-#			self.scroll_image_label,
-#			QtCore.SIGNAL('loadNext()'), # next button triggered
-#			self.loadNextPreviewImage
-#		)
-		
 		self.scroll_image_label.loadPrev.connect(self.loadPrevPreviewImage)
-#		self.connect(
-#			self.scroll_image_label,
-#			QtCore.SIGNAL('loadPrev()'), # prev button triggered
-#			self.loadPrevPreviewImage
-#		)
 		
 		#---------------------------------------------------------------
 		
 		action_quit.triggered.connect(self.quitEvent)
-#		self.connect(
-#			action_quit,
-#			QtCore.SIGNAL('triggered()'),
-#			self.quitEvent
-#		)
 		self.action_apply.triggered.connect(self.applyChanges)
-#		self.connect(
-#			self.action_apply,
-#			QtCore.SIGNAL('triggered()'),
-#			self.applyChanges
-#		)
 		self.action_save.triggered.connect(self.saveChanges)
-#		self.connect(
-#			self.action_save,
-#			QtCore.SIGNAL('triggered()'),
-#			self.saveChanges
-#		)
 		self.action_openDir.triggered.connect(self.selectDirectory)
-#		self.connect(
-#			self.action_openDir,
-#			QtCore.SIGNAL('triggered()'),
-#			self.selectDirectory
-#		)
 		self.menu_iconSize.triggered.connect(self.adjustIconSize)
-#		self.connect(
-#			self.menu_iconSize,
-#			QtCore.SIGNAL('triggered(QAction*)'),
-#			self.adjustIconSize
-#		)
 		menu_sorting.triggered.connect(self.setSortCriterion)
-#		self.connect(
-#			menu_sorting,
-#			QtCore.SIGNAL('triggered(QAction*)'),
-#			self.setSortCriterion
-#		)
 		self.action_rotateLeft.triggered.connect(self.rotateImageLeft)
-#		self.connect(
-#			self.action_rotateLeft,
-#			QtCore.SIGNAL('triggered()'),
-#			self.rotateImageLeft
-#		)
 		self.action_rotateRight.triggered.connect(self.rotateImageRight)
-#		self.connect(
-#			self.action_rotateRight,
-#			QtCore.SIGNAL('triggered()'),
-#			self.rotateImageRight
-#		)
 		self.action_resetAll.triggered.connect(self.resetAll)
-#		self.connect(
-#			self.action_resetAll,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetAll
-#		)
 		self.action_resetOrientation.triggered.connect(self.resetOrientation)
-#		self.connect(
-#			self.action_resetOrientation,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetOrientation
-#		)
 		self.action_resetLocation.triggered.connect(self.resetLocation)
-#		self.connect(
-#			self.action_resetLocation,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetLocation
-#		)
 		self.action_resetTimezones.triggered.connect(self.resetTimezones)
-#		self.connect(
-#			self.action_resetTimezones,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetTimezones
-#		)
 		self.action_resetKeywords.triggered.connect(self.resetKeywords)
-#		self.connect(
-#			self.action_resetKeywords,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetKeywords
-#		)
 		self.action_resetCopyright.triggered.connect(self.resetCopyright)
-#		self.connect(
-#			self.action_resetCopyright,
-#			QtCore.SIGNAL('triggered()'),
-#			self.resetCopyright
-#		)
-		
 		self.action_locationLookUp.triggered.connect(self.dock_geotagging.lookUpCoordinates)
-#		self.connect(
-#			self.action_locationLookUp,
-#			QtCore.SIGNAL('triggered()'),
-#			self.dock_geotagging.lookUpCoordinates
-#		)
 		self.action_openGimp.triggered.connect(self.openWithTheGimp)
-#		self.connect(
-#			self.action_openGimp,
-#			QtCore.SIGNAL('triggered()'),
-#			self.openWithTheGimp
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.action_resetOrientation.changed.connect(self.updateResetAllAction)
-#		self.connect(
-#			self.action_resetOrientation,
-#			QtCore.SIGNAL('changed()'),
-#			self.updateResetAllAction
-#		)
 		self.action_resetLocation.changed.connect(self.updateResetAllAction)
-#		self.connect(
-#			self.action_resetLocation,
-#			QtCore.SIGNAL('changed()'),
-#			self.updateResetAllAction
-#		)
 		self.action_resetTimezones.changed.connect(self.updateResetAllAction)
-#		self.connect(
-#			self.action_resetTimezones,
-#			QtCore.SIGNAL('changed()'),
-#			self.updateResetAllAction
-#		)
 		self.action_resetKeywords.changed.connect(self.updateResetAllAction)
-#		self.connect(
-#			self.action_resetKeywords,
-#			QtCore.SIGNAL('changed()'),
-#			self.updateResetAllAction
-#		)
 		self.action_resetCopyright.changed.connect(self.updateResetAllAction)
-#		self.connect(
-#			self.action_resetCopyright,
-#			QtCore.SIGNAL('changed()'),
-#			self.updateResetAllAction
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.dock_geotagging.dockDataUpdated.connect(self.updateLocation)
-#		self.connect(
-#			self.dock_geotagging,
-#			QtCore.SIGNAL('dockDataUpdated(PyQt_PyObject)'),
-#			self.updateLocation
-#		)
 		self.dock_geotagging.dockResetTriggered.connect(self.resetLocation)
-#		self.connect(
-#			self.dock_geotagging,
-#			QtCore.SIGNAL('dockResetTriggered()'),
-#			self.resetLocation
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.dock_timezones.dockDataUpdated.connect(self.updateTimezones)
-#		self.connect(
-#			self.dock_timezones,
-#			QtCore.SIGNAL('dockDataUpdated(PyQt_PyObject)'),
-#			self.updateTimezones
-#		)
 		self.dock_timezones.dockResetTriggered.connect(self.resetTimezones)
-#		self.connect(
-#			self.dock_timezones,
-#			QtCore.SIGNAL('dockResetTriggered()'),
-#			self.resetTimezones
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.dock_keywords.dockKeywordAdded.connect(self.addKeyword)
-#		self.connect(
-#			self.dock_keywords,
-#			QtCore.SIGNAL('dockKeywordAdded(PyQt_PyObject)'),
-#			self.addKeyword
-#		)
 		self.dock_keywords.dockKeywordRemoved.connect(self.removeKeyword)
-#		self.connect(
-#			self.dock_keywords,
-#			QtCore.SIGNAL('dockKeywordRemoved(PyQt_PyObject)'),
-#			self.removeKeyword
-#		)
 		self.dock_keywords.dockResetTriggered.connect(self.resetKeywords)
-#		self.connect(
-#			self.dock_keywords,
-#			QtCore.SIGNAL('dockResetTriggered()'),
-#			self.resetKeywords
-#		)
 		
 		#---------------------------------------------------------------
 		
 		self.dock_copyright.dockDataUpdated.connect(self.updateCopyright)
-#		self.connect(
-#			self.dock_copyright,
-#			QtCore.SIGNAL('dockDataUpdated(PyQt_PyObject)'),
-#			self.updateCopyright
-#		)
 		self.dock_copyright.dockResetTriggered.connect(self.resetCopyright)
-#		self.connect(
-#			self.dock_copyright,
-#			QtCore.SIGNAL('dockResetTriggered()'),
-#			self.resetCopyright
-#		)
 		
 		#---------------------------------------------------------------
 		
 		action_config.triggered.connect(self.configureProgram)
-#		self.connect(
-#			action_config,
-#			QtCore.SIGNAL('triggered()'),
-#			self.configureProgram
-#		)
 		
 		#---------------------------------------------------------------
 		
 		action_about.triggered.connect(self.aboutDialog)
-#		self.connect(
-#			action_about,
-#			QtCore.SIGNAL('triggered()'),
-#			self.aboutDialog
-#		)
 		action_aboutQt.triggered.connect(self.aboutQtDialog)
-#		self.connect(
-#			action_aboutQt,
-#			QtCore.SIGNAL('triggered()'),
-#			self.aboutQtDialog
-#		)
 		
 		#---------------------------------------------------------------
 		# construct main window
@@ -1718,6 +1518,9 @@ This method creates a "save file" dialog."""
 	
 			try:    self.float_readdelay = float(settings.value("ReadDelay",0.0001))
 			except: self.float_readdelay = 0.0001
+			
+			try:    self.lst_naming_cmd = settings.value("NamingScheme",dlg.DEFAULT_NAMING_SCHEME).split(" ")
+			except: self.lst_naming_cmd = dlg.DEFAULT_NAMING_SCHEME.split(" ")
 	
 	#-----------------------------------------------------------------------
 	

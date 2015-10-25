@@ -107,35 +107,10 @@ Attributes: Delete on close"""
 		self.setWidget(widget)
 		
 		button_lookUp.clicked.connect(self.lookUpCoordinates)
-#		self.connect(
-#			button_lookUp,
-#			QtCore.SIGNAL('clicked()'),
-#			self.lookUpCoordinates
-#		)
 		self.button_reset.clicked.connect(self.triggerReset)
-#		self.connect(
-#			self.button_reset,
-#			QtCore.SIGNAL('clicked()'),
-#			self.triggerReset
-#		)
 		self.spinbox_latitude.editingFinished.connect(self.updateData)
-#		self.connect(
-#			self.spinbox_latitude,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.updateData
-#		)
 		self.spinbox_longitude.editingFinished.connect(self.updateData)
-#		self.connect(
-#			self.spinbox_longitude,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.updateData
-#		)
 		self.spinbox_elevation.editingFinished.connect(self.updateData)
-#		self.connect(
-#			self.spinbox_elevation,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.updateData
-#		)
 		self.setLocation()
 	
 	
@@ -274,35 +249,11 @@ Attributes: Delete on close"""
 		self.setWidget(widget)
 		
 		self.button_reset.clicked.connect(self.triggerReset)
-#		self.connect(
-#			self.button_reset,
-#			QtCore.SIGNAL('clicked()'),
-#			self.triggerReset
-#		)
 		self.combo_fromTz.activated.connect(self.updateData)
-#		self.connect(
-#			self.combo_fromTz,
-#			QtCore.SIGNAL('activated(int)'),
-#			self.updateData
-#		)
 		self.combo_toTz.activated.connect(self.updateData)
-#		self.connect(
-#			self.combo_toTz,
-#			QtCore.SIGNAL('activated(int)'),
-#			self.updateData
-#		)
 		self.button_fromTz.clicked.connect(self.setFromTimezoneByCoordinates)
-#		self.connect(
-#			self.button_fromTz,
-#			QtCore.SIGNAL('clicked()'),
-#			self.setFromTimezoneByCoordinates
-#		)
 		self.button_toTz.clicked.connect(self.setToTimezoneByCoordinates)
-#		self.connect(
-#			self.button_toTz,
-#			QtCore.SIGNAL('clicked()'),
-#			self.setToTimezoneByCoordinates
-#		)
+		
 		self.setTimezones()
 		self.setLocation()
 	
@@ -436,29 +387,9 @@ Attributes: Delete on close"""
 		self.setWidget(widget)
 		
 		self.list_keywords.itemSelectionChanged.connect(self.updateRemoveButtonState)
-#		self.connect(
-#			self.list_keywords,
-#			QtCore.SIGNAL('itemSelectionChanged()'),
-#			self.updateRemoveButtonState
-#		)
 		self.button_add.clicked.connect(self.addKeyword)
-#		self.connect(
-#			self.button_add,
-#			QtCore.SIGNAL('clicked()'),
-#			self.addKeyword
-#		)
-		self.button_remove.clicked.connect(self.removeKeyword)
-#		self.connect(
-#			self.button_remove,
-#			QtCore.SIGNAL('clicked()'),
-#			self.removeKeyword
-#		)
 		self.button_reset.clicked.connect(self.triggerReset)
-#		self.connect(
-#			self.button_reset,
-#			QtCore.SIGNAL('clicked()'),
-#			self.triggerReset
-#		)
+		
 		self.setKeywords()
 		
 	
@@ -584,17 +515,8 @@ Attributes: Delete on close"""
 		self.setWidget(widget)
 		
 		self.button_reset.clicked.connect(self.triggerReset)
-#		self.connect(
-#			self.button_reset,
-#			QtCore.SIGNAL('clicked()'),
-#			self.triggerReset
-#		)
 		self.edit_copyright.editingFinished.connect(self.updateData)
-#		self.connect(
-#			self.edit_copyright,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.updateData
-#		)
+		
 		self.setCopyright()
 
 	
@@ -656,7 +578,7 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 			QtGui.QDialogButtonBox.ActionRole
 		)
 		self.button_add = self.box_stdButtons.addButton(
-			QtCore.QCoreApplication.translate("Dialog","Add commands"),
+			QtCore.QCoreApplication.translate("Dialog","Add FFP file(s)"),
 			QtGui.QDialogButtonBox.ActionRole
 		)
 		
@@ -668,23 +590,9 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		self.setLayout(layout)
 		
 		self.button_execute.clicked.connect(self.execute)
-#		self.connect(
-#			self.button_execute,
-#			QtCore.SIGNAL('clicked()'),
-#			self.execute
-#		)
-		self.button_add.clicked.connect(self.addChangesFile)
-#		self.connect(
-#			self.button_add,
-#			QtCore.SIGNAL('clicked()'),
-#			self.addChangesFile
-#		)
-		self.box_stdButtons.clicked.connect(self.cancelOp)
-#		self.connect(
-#			self.box_stdButtons,
-#			QtCore.SIGNAL('rejected()'),
-#			self.cancelOp
-#		)
+		self.button_add.clicked.connect(self.addChangesFiles)
+		self.box_stdButtons.rejected.connect(self.cancelOp)
+		
 		self.progressbar.hide()
 		
 		self.lst_commands = list()
@@ -694,13 +602,14 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		self.ustr_path_exiftool = ustr_path_exiftool
 	
 	
-	def addChangesFile(self):
-		filename = QtGui.QFileDialog.getOpenFileName(self,
-			QtCore.QCoreApplication.translate("Dialog","Load FPP Changes File"),
-		)
-		if len(filename) > 0:
-			with open(filename,"r") as f:
-				 self.addParameters(yaml.safe_load(f))
+	def addChangesFiles(self):
+		filenames = QtGui.QFileDialog.getOpenFileNames(self)
+		for filename in filenames:
+			try:
+				with open(filename,"r") as f:
+					self.addParameters(yaml.safe_load(f))
+			except FileNotFoundError:
+				pass
 	
 	
 	def calculate_commands(self):
@@ -714,6 +623,9 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 			self.lst_commands.append(command)
 		
 		if len(self.dict_parameters) > 0:
+			settings = QtCore.QSettings()
+			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
+			
 			# rename all files
 			command = [ self.ustr_path_exiftool,
 				"-config",str(os.path.join(sys.path[0],"FotoPreProcessor.exiftool")),
@@ -758,9 +670,6 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		self.progressbar.show()
 		self.konsole.clear()
 		
-		settings = QtCore.QSettings()
-		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
-		
 		self.bool_isRunning = True
 		for command in self.lst_commands:
 			if not self.bool_isRunning:
@@ -787,6 +696,8 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 
 class FPPSettingsDialog(QtGui.QDialog):
 	
+	DEFAULT_NAMING_SCHEME = "-d %Y%m%d-%H%M%S -FileName<${DateTimeOriginal}%-2nc-${FPPModel}.%le"
+	
 	def __init__(self,parent=None):
 		"""Constructor; initialise fields, load bookmarks and construct GUI."""
 		QtGui.QDialog.__init__(self,parent)
@@ -811,9 +722,10 @@ class FPPSettingsDialog(QtGui.QDialog):
 		button_find_exiftool = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","..."))
 		button_find_gimp = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","..."))
 		
-		#self.edit_naming = QtGui.QLineEdit()
-		#self.label_naming = QtGui.QLabel()
-		#self.button_help_naming = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","Help"))
+		self.check_naming = QtGui.QCheckBox(QtCore.QCoreApplication.translate("Dialog","Rename files according to naming scheme below\nWARNING: an erroneous input may lead to damaged image files!"))
+		self.edit_naming = QtGui.QLineEdit()
+		self.edit_naming.setToolTip(QtCore.QCoreApplication.translate("Dialog","Enter filename related exiftool parameters, \ne.g. -d DATEFORMAT -FileName<NAMEFORMAT."))
+		self.button_reset_naming = QtGui.QPushButton(QtCore.QCoreApplication.translate("Dialog","Default"))
 		
 		self.spinbox_stepsize = QtGui.QSpinBox()
 		self.spinbox_stepsize.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
@@ -867,15 +779,15 @@ class FPPSettingsDialog(QtGui.QDialog):
 		
 		#-----------------------------------------------------------------------
 		
-		#group_naming = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","Naming Scheme"))
-		#layout_naming_edit = QtGui.QVBoxLayout()
-		#layout_naming_edit.addWidget(self.edit_naming)
-		#layout_naming_edit.addWidget(self.label_naming)
-		#layout_naming = QtGui.QHBoxLayout()
-		#layout_naming.addLayout(layout_naming_edit)
-		#layout_naming.addWidget(self.button_help_naming)
-		#group_naming.setLayout(layout_naming)
-		#group_naming.setEnabled(False)
+		group_naming = QtGui.QGroupBox(QtCore.QCoreApplication.translate("Dialog","File Naming"))
+		layout_naming = QtGui.QVBoxLayout()
+		layout_naming.addWidget(self.check_naming)
+		layout_naming_edit = QtGui.QHBoxLayout()
+		layout_naming_edit.addWidget(self.edit_naming)
+		layout_naming_edit.addWidget(self.button_reset_naming)
+		layout_naming.addLayout(layout_naming_edit)
+		group_naming.setLayout(layout_naming)
+		self.check_naming.setChecked(True)
 		
 		#-----------------------------------------------------------------------
 		
@@ -900,7 +812,7 @@ class FPPSettingsDialog(QtGui.QDialog):
 		
 		layout = QtGui.QVBoxLayout()
 		layout.addWidget(group_paths)
-		#layout.addWidget(group_naming)
+		layout.addWidget(group_naming)
 		layout.addWidget(group_tuning)
 		layout.addWidget(group_geotag)
 		layout.addWidget(box_stdButtons)
@@ -910,78 +822,21 @@ class FPPSettingsDialog(QtGui.QDialog):
 		#-----------------------------------------------------------------------
 		
 		box_stdButtons.accepted.connect(self.applyChangesAndAccept)
-#		self.connect(
-#			box_stdButtons,
-#			QtCore.SIGNAL('accepted()'),
-#			self.applyChangesAndAccept
-#		)
 		box_stdButtons.rejected.connect(self.reject)
-#		self.connect(
-#			box_stdButtons,
-#			QtCore.SIGNAL('rejected()'),
-#			self.reject
-#		)
 		self.button_reset.clicked.connect(self.resetValues)
-#		self.connect(
-#			self.button_reset,
-#			QtCore.SIGNAL('clicked()'),
-#			self.resetValues
-#		)
 		button_lookUp.clicked.connect(self.lookUpCoordinates)
-#		self.connect(
-#			button_lookUp,
-#			QtCore.SIGNAL('clicked()'),
-#			self.lookUpCoordinates
-#		)
 		self.edit_exiftool.editingFinished.connect(self.exiftoolChanged)
-#		self.connect(
-#			self.edit_exiftool,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.exiftoolChanged
-#		)
 		self.edit_gimp.editingFinished.connect(self.gimpChanged)
-#		self.connect(
-#			self.edit_gimp,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.gimpChanged
-#		)
 		button_find_exiftool.clicked.connect(self.selectExiftool)
-#		self.connect(
-#			button_find_exiftool,
-#			QtCore.SIGNAL('clicked()'),
-#			self.selectExiftool
-#		)
 		button_find_gimp.clicked.connect(self.selectTheGimp)
-#		self.connect(
-#			button_find_gimp,
-#			QtCore.SIGNAL('clicked()'),
-#			self.selectTheGimp
-#		)
 		self.spinbox_stepsize.editingFinished.connect(self.stepsizeChanged)
-#		self.connect(
-#			self.spinbox_stepsize,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.stepsizeChanged
-#		)
 		self.spinbox_readsize.editingFinished.connect(self.readsizeChanged)
-#		self.connect(
-#			self.spinbox_readsize,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.readsizeChanged
-#		)
-#		
 		self.spinbox_latitude.editingFinished.connect(self.latitudeChanged)
-#		self.connect(
-#			self.spinbox_latitude,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.latitudeChanged
-#		)
 		self.spinbox_longitude.editingFinished.connect(self.longitudeChanged)
-#		self.connect(
-#			self.spinbox_longitude,
-#			QtCore.SIGNAL('editingFinished()'),
-#			self.longitudeChanged
-#		)
+		self.check_naming.stateChanged.connect(self.checkNamingChanged)
+		self.button_reset_naming.clicked.connect(self.resetNaming)
+		self.edit_naming.editingFinished.connect(self.editNamingChanged)
+		
 		#-----------------------------------------------------------------------
 		
 		self.setStyleSheet(":disabled { color: gray; }")
@@ -1011,7 +866,8 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.spinbox_readsize.setValue(int_readsize)
 		self.spinbox_latitude.setValue(float_latitude)
 		self.spinbox_longitude.setValue(float_longitude)
-		
+		self.edit_naming.setText(self.settings.value("NamingScheme",self.DEFAULT_NAMING_SCHEME))
+		self.check_naming.setChecked(self.settings.value("NamingEnabled",True) in ("true",True))
 		self.button_reset.setEnabled(False)
 	
 	
@@ -1022,6 +878,8 @@ class FPPSettingsDialog(QtGui.QDialog):
 		self.settings.setValue("TheGimpPath",self.edit_gimp.text())
 		self.settings.setValue("DefaultLatitude",self.spinbox_latitude.value())
 		self.settings.setValue("DefaultLongitude",self.spinbox_longitude.value())
+		self.settings.setValue("NamingScheme",self.edit_naming.text())
+		self.settings.setValue("NamingEnabled",self.check_naming.isChecked())
 		self.button_reset.setEnabled(False)
 		self.accept()
 	
@@ -1082,6 +940,20 @@ class FPPSettingsDialog(QtGui.QDialog):
 		try:    value = float(self.settings.value("DefaultLongitude",9.738611))
 		except: value = 9.738611
 		self.button_reset.setEnabled( self.spinbox_longitude.value() != value )
+	
+	
+	def editNamingChanged(self):
+		self.button_reset.setEnabled(
+			self.edit_naming.text() != self.settings.value("NamingScheme",self.DEFAULT_NAMING_SCHEME)
+		)
+	
+	def checkNamingChanged(self):
+		self.edit_naming.setEnabled(self.check_naming.isChecked())
+		self.button_reset_naming.setEnabled(self.check_naming.isChecked())
+	
+	
+	def resetNaming(self):
+		self.edit_naming.setText(self.DEFAULT_NAMING_SCHEME)
 	
 	
 	def lookUpCoordinates(self):
@@ -1152,10 +1024,5 @@ class FPPAboutDialog(QtGui.QDialog):
 		self.setLayout(layout)
 		
 		box_stdButtons.rejected.connect(self.accept)
-#		self.connect(
-#			box_stdButtons,
-#			QtCore.SIGNAL('rejected()'),
-#			self.accept
-#		)
 
 

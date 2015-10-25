@@ -169,4 +169,4 @@ Changelog
             updated translation
 
 2015-10-25: some fixes; changes can now be saved/loaded for delayed application,
-            upgrade to new signal/slot mechanism
+            upgrade to new signal/slot mechanism, file naming is now configurable
