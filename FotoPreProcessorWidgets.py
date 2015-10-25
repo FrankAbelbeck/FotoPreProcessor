@@ -22,7 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 2015-06-16: migration to Python3
 """
 
-import subprocess,sys,os.path,codecs,re,time
+import subprocess,sys,os.path,codecs,re,time,yaml
 
 from PyQt4 import QtGui, QtCore
 
@@ -31,6 +31,10 @@ import FotoPreProcessorTools
 
 class FPPGeoTaggingDock(QtGui.QDockWidget):
 	""""Class for the GeoTagging Dock Widget."""
+		
+	# new signal/slot mechanism: define custom signals (must be defined as class vars!)
+	dockResetTriggered = QtCore.pyqtSignal()
+	dockDataUpdated = QtCore.pyqtSignal(float,float,float)
 	
 	def __init__(self):
 		"""Constructor; initialise dock widget and setup its GUI elements.
@@ -102,31 +106,36 @@ Attributes: Delete on close"""
 		widget.setLayout(layout)
 		self.setWidget(widget)
 		
-		self.connect(
-			button_lookUp,
-			QtCore.SIGNAL('clicked()'),
-			self.lookUpCoordinates
-		)
-		self.connect(
-			self.button_reset,
-			QtCore.SIGNAL('clicked()'),
-			self.triggerReset
-		)
-		self.connect(
-			self.spinbox_latitude,
-			QtCore.SIGNAL('editingFinished()'),
-			self.updateData
-		)
-		self.connect(
-			self.spinbox_longitude,
-			QtCore.SIGNAL('editingFinished()'),
-			self.updateData
-		)
-		self.connect(
-			self.spinbox_elevation,
-			QtCore.SIGNAL('editingFinished()'),
-			self.updateData
-		)
+		button_lookUp.clicked.connect(self.lookUpCoordinates)
+#		self.connect(
+#			button_lookUp,
+#			QtCore.SIGNAL('clicked()'),
+#			self.lookUpCoordinates
+#		)
+		self.button_reset.clicked.connect(self.triggerReset)
+#		self.connect(
+#			self.button_reset,
+#			QtCore.SIGNAL('clicked()'),
+#			self.triggerReset
+#		)
+		self.spinbox_latitude.editingFinished.connect(self.updateData)
+#		self.connect(
+#			self.spinbox_latitude,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.updateData
+#		)
+		self.spinbox_longitude.editingFinished.connect(self.updateData)
+#		self.connect(
+#			self.spinbox_longitude,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.updateData
+#		)
+		self.spinbox_elevation.editingFinished.connect(self.updateData)
+#		self.connect(
+#			self.spinbox_elevation,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.updateData
+#		)
 		self.setLocation()
 	
 	
@@ -182,16 +191,13 @@ Attributes: Delete on close"""
 	
 	
 	def triggerReset(self):
-		self.emit(QtCore.SIGNAL("dockResetTriggered()"))
+		self.dockResetTriggered.emit()
 	
 	
 	def updateData(self):
 		(latitude,longitude,elevation) = self.location()
 		if (latitude != None) and (longitude != None):
-			self.emit(
-				QtCore.SIGNAL("dockDataUpdated(PyQt_PyObject)"),
-				(latitude,longitude,elevation)
-			)
+			self.dockDataUpdated.emit(latitude,longitude,elevation)
 	
 	
 	def setResetEnabled(self,state=True):
@@ -201,6 +207,10 @@ Attributes: Delete on close"""
 
 class FPPTimezonesDock(QtGui.QDockWidget):
 	""""Class for the Timezone Correction Dock Widget."""
+	
+	# new signal/slot mechanism: define custom signals
+	dockResetTriggered = QtCore.pyqtSignal()
+	dockDataUpdated = QtCore.pyqtSignal(str,str)
 	
 	def __init__(self):
 		"""Constructor; initialise dock widget and setup its GUI elements.
@@ -263,31 +273,36 @@ Attributes: Delete on close"""
 		widget.setLayout(layout)
 		self.setWidget(widget)
 		
-		self.connect(
-			self.button_reset,
-			QtCore.SIGNAL('clicked()'),
-			self.triggerReset
-		)
-		self.connect(
-			self.combo_fromTz,
-			QtCore.SIGNAL('activated(int)'),
-			self.updateData
-		)
-		self.connect(
-			self.combo_toTz,
-			QtCore.SIGNAL('activated(int)'),
-			self.updateData
-		)
-		self.connect(
-			self.button_fromTz,
-			QtCore.SIGNAL('clicked()'),
-			self.setFromTimezoneByCoordinates
-		)
-		self.connect(
-			self.button_toTz,
-			QtCore.SIGNAL('clicked()'),
-			self.setToTimezoneByCoordinates
-		)
+		self.button_reset.clicked.connect(self.triggerReset)
+#		self.connect(
+#			self.button_reset,
+#			QtCore.SIGNAL('clicked()'),
+#			self.triggerReset
+#		)
+		self.combo_fromTz.activated.connect(self.updateData)
+#		self.connect(
+#			self.combo_fromTz,
+#			QtCore.SIGNAL('activated(int)'),
+#			self.updateData
+#		)
+		self.combo_toTz.activated.connect(self.updateData)
+#		self.connect(
+#			self.combo_toTz,
+#			QtCore.SIGNAL('activated(int)'),
+#			self.updateData
+#		)
+		self.button_fromTz.clicked.connect(self.setFromTimezoneByCoordinates)
+#		self.connect(
+#			self.button_fromTz,
+#			QtCore.SIGNAL('clicked()'),
+#			self.setFromTimezoneByCoordinates
+#		)
+		self.button_toTz.clicked.connect(self.setToTimezoneByCoordinates)
+#		self.connect(
+#			self.button_toTz,
+#			QtCore.SIGNAL('clicked()'),
+#			self.setToTimezoneByCoordinates
+#		)
 		self.setTimezones()
 		self.setLocation()
 	
@@ -351,14 +366,14 @@ Attributes: Delete on close"""
 	
 	
 	def triggerReset(self):
-		self.emit(QtCore.SIGNAL("dockResetTriggered()"))
+		self.dockResetTriggered.emit()
 	
 	
 	def updateData(self,value=None):
 		try:
 			fromTz = str(self.combo_fromTz.currentText())
 			toTz = str(self.combo_toTz.currentText())
-			self.emit(QtCore.SIGNAL("dockDataUpdated(PyQt_PyObject)"),(fromTz,toTz))
+			self.dockDataUpdated.emit(fromTz,toTz)
 		except:
 			pass
 	
@@ -370,6 +385,10 @@ Attributes: Delete on close"""
 
 class FPPKeywordsDock(QtGui.QDockWidget):
 	""""Class for the Keywords Dock Widget."""
+	# new signal/slot mechanism: define custom signals
+	dockResetTriggered = QtCore.pyqtSignal()
+	dockKeywordAdded = QtCore.pyqtSignal(str)
+	dockKeywordRemoved = QtCore.pyqtSignal(str)
 	
 	def __init__(self):
 		"""Constructor; initialise dock widget and setup its GUI elements.
@@ -416,28 +435,32 @@ Attributes: Delete on close"""
 		widget.setLayout(layout)
 		self.setWidget(widget)
 		
-		self.connect(
-			self.list_keywords,
-			QtCore.SIGNAL('itemSelectionChanged()'),
-			self.updateRemoveButtonState
-		)
-		self.connect(
-			self.button_add,
-			QtCore.SIGNAL('clicked()'),
-			self.addKeyword
-		)
-		self.connect(
-			self.button_remove,
-			QtCore.SIGNAL('clicked()'),
-			self.removeKeyword
-		)
-		self.connect(
-			self.button_reset,
-			QtCore.SIGNAL('clicked()'),
-			self.triggerReset
-		)
+		self.list_keywords.itemSelectionChanged.connect(self.updateRemoveButtonState)
+#		self.connect(
+#			self.list_keywords,
+#			QtCore.SIGNAL('itemSelectionChanged()'),
+#			self.updateRemoveButtonState
+#		)
+		self.button_add.clicked.connect(self.addKeyword)
+#		self.connect(
+#			self.button_add,
+#			QtCore.SIGNAL('clicked()'),
+#			self.addKeyword
+#		)
+		self.button_remove.clicked.connect(self.removeKeyword)
+#		self.connect(
+#			self.button_remove,
+#			QtCore.SIGNAL('clicked()'),
+#			self.removeKeyword
+#		)
+		self.button_reset.clicked.connect(self.triggerReset)
+#		self.connect(
+#			self.button_reset,
+#			QtCore.SIGNAL('clicked()'),
+#			self.triggerReset
+#		)
 		self.setKeywords()
-	
+		
 	
 	def addKeyword(self):
 		tpl_keywords = self.DBKeywords.strings()
@@ -453,7 +476,7 @@ Attributes: Delete on close"""
 				self.set_keywords.add(keyword)
 				self.list_keywords.addItem(keyword)
 				self.list_keywords.sortItems()
-				self.emit(QtCore.SIGNAL("dockKeywordAdded(PyQt_PyObject)"),keyword)
+				self.dockKeywordAdded.emit(keyword)
 				self.updateRemoveButtonState()
 			else:
 				answer = QtGui.QMessageBox.information(
@@ -467,7 +490,7 @@ Attributes: Delete on close"""
 		for item in self.list_keywords.selectedItems():
 			self.list_keywords.takeItem(self.list_keywords.row(item))
 			self.set_keywords.remove(str(item.text()))
-			self.emit(QtCore.SIGNAL("dockKeywordRemoved(PyQt_PyObject)"),str(item.text()))
+			self.dockKeywordRemoved.emit(str(item.text()))
 		self.list_keywords.sortItems()
 		self.updateRemoveButtonState()
 	
@@ -490,7 +513,7 @@ Attributes: Delete on close"""
 	
 	
 	def triggerReset(self,button=None):
-		self.emit(QtCore.SIGNAL("dockResetTriggered()"))
+		self.dockResetTriggered.emit()
 	
 	
 	def updateRemoveButtonState(self):
@@ -515,6 +538,11 @@ Attributes: Delete on close"""
 
 class FPPCopyrightDock(QtGui.QDockWidget):
 	""""Class for the Copyright Dock Widget."""
+	
+	# new signal/slot mechanism: define custom signals
+	dockResetTriggered = QtCore.pyqtSignal()
+	dockDataUpdated = QtCore.pyqtSignal(str)
+	dockKeywordRemoved = QtCore.pyqtSignal(str)
 	
 	def __init__(self):
 		"""Constructor; initialise dock widget and setup its GUI elements.
@@ -555,17 +583,20 @@ Attributes: Delete on close"""
 		widget.setLayout(layout)
 		self.setWidget(widget)
 		
-		self.connect(
-			self.button_reset,
-			QtCore.SIGNAL('clicked()'),
-			self.triggerReset
-		)
-		self.connect(
-			self.edit_copyright,
-			QtCore.SIGNAL('editingFinished()'),
-			self.updateData
-		)
+		self.button_reset.clicked.connect(self.triggerReset)
+#		self.connect(
+#			self.button_reset,
+#			QtCore.SIGNAL('clicked()'),
+#			self.triggerReset
+#		)
+		self.edit_copyright.editingFinished.connect(self.updateData)
+#		self.connect(
+#			self.edit_copyright,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.updateData
+#		)
 		self.setCopyright()
+
 	
 	
 	def setCopyright(self,notice=str()):
@@ -584,12 +615,12 @@ Attributes: Delete on close"""
 	
 	
 	def triggerReset(self,button=None):
-		self.emit(QtCore.SIGNAL("dockResetTriggered()"))
+		self.dockResetTriggered.emit()
 	
 	
 	def updateData(self):
 		notice = str(self.edit_copyright.text())
-		self.emit(QtCore.SIGNAL("dockDataUpdated(PyQt_PyObject)"),notice)
+		self.dockDataUpdated.emit(notice)
 		self.DBCopyright.add(notice)
 		self.completer.model().setStringList(self.DBCopyright.strings())
 	
@@ -612,7 +643,7 @@ Attributes: Delete on close"""
 
 class FPPApplyChangesDialog(QtGui.QDialog):
 	
-	def __init__(self,parent=None):
+	def __init__(self,ustr_path_exiftool,parent=None):
 		"""Constructor; initialise fields, load bookmarks and construct GUI."""
 		QtGui.QDialog.__init__(self,parent)
 		self.progressbar = QtGui.QProgressBar()
@@ -624,6 +655,10 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 			QtCore.QCoreApplication.translate("Dialog","Execute"),
 			QtGui.QDialogButtonBox.ActionRole
 		)
+		self.button_add = self.box_stdButtons.addButton(
+			QtCore.QCoreApplication.translate("Dialog","Add commands"),
+			QtGui.QDialogButtonBox.ActionRole
+		)
 		
 		layout = QtGui.QVBoxLayout()
 		layout.addWidget(self.progressbar)
@@ -631,30 +666,73 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		layout.addWidget(self.box_stdButtons)
 		
 		self.setLayout(layout)
-	
-		self.connect(
-			self.button_execute,
-			QtCore.SIGNAL('clicked()'),
-			self.execute
-		)
-		self.connect(
-			self.box_stdButtons,
-			QtCore.SIGNAL('rejected()'),
-			self.cancelOp
-		)
-		self.lst_commands = list()
 		
+		self.button_execute.clicked.connect(self.execute)
+#		self.connect(
+#			self.button_execute,
+#			QtCore.SIGNAL('clicked()'),
+#			self.execute
+#		)
+		self.button_add.clicked.connect(self.addChangesFile)
+#		self.connect(
+#			self.button_add,
+#			QtCore.SIGNAL('clicked()'),
+#			self.addChangesFile
+#		)
+		self.box_stdButtons.clicked.connect(self.cancelOp)
+#		self.connect(
+#			self.box_stdButtons,
+#			QtCore.SIGNAL('rejected()'),
+#			self.cancelOp
+#		)
 		self.progressbar.hide()
+		
+		self.lst_commands = list()
 		self.setStyleSheet(":disabled { color: gray; }")
 		self.bool_isRunning = None
+		self.dict_parameters = dict()
+		self.ustr_path_exiftool = ustr_path_exiftool
 	
 	
-	def addCommand(self,command=tuple()):
-		try:
-			self.lst_commands.append(tuple(command))
-			self.konsole.appendPlainText(" ".join(tuple(command))+"\n")
-		except:
-			pass
+	def addChangesFile(self):
+		filename = QtGui.QFileDialog.getOpenFileName(self,
+			QtCore.QCoreApplication.translate("Dialog","Load FPP Changes File"),
+		)
+		if len(filename) > 0:
+			with open(filename,"r") as f:
+				 self.addParameters(yaml.safe_load(f))
+	
+	
+	def calculate_commands(self):
+		self.konsole.clear()
+		self.lst_commands = list()
+		for name,parameters in self.dict_parameters.items():
+			command = [self.ustr_path_exiftool,"-P","-overwrite_original"]
+			command.extend(parameters)
+			command.append(name)
+			self.konsole.appendPlainText(" ".join(command)+"\n")
+			self.lst_commands.append(command)
+		
+		if len(self.dict_parameters) > 0:
+			# rename all files
+			command = [ self.ustr_path_exiftool,
+				"-config",str(os.path.join(sys.path[0],"FotoPreProcessor.exiftool")),
+				"-P",
+				"-overwrite_original",
+				"-d","%Y%m%d-%H%M%S",
+				"-FileName<${DateTimeOriginal}%-2nc-${FPPModel}.%le"
+			]
+			command.extend(self.dict_parameters.keys())
+			self.konsole.appendPlainText(" ".join(command)+"\n")
+			self.lst_commands.append(command)
+		else:
+			# files not yet recorded: display hint
+			self.konsole.appendHtml("<i>"+QtCore.QCoreApplication.translate("Dialog","There are no changes to apply.\nEither load a changes file or edit some pictures.")+"</i>\n")
+	
+	
+	def addParameters(self,parameters):
+		self.dict_parameters.update(parameters)
+		self.calculate_commands()
 	
 	
 	def cancelOp(self):
@@ -673,9 +751,9 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 	
 	def execute(self):
 		self.box_stdButtons.removeButton(self.button_execute)
-		
+		self.box_stdButtons.removeButton(self.button_add)
 		self.progressbar.reset()
-		self.progressbar.setRange(0,len(self.lst_commands)-1)
+		self.progressbar.setRange(1,len(self.lst_commands))
 		self.progressbar.setFormat("%v/%m")
 		self.progressbar.show()
 		self.konsole.clear()
@@ -831,67 +909,79 @@ class FPPSettingsDialog(QtGui.QDialog):
 		
 		#-----------------------------------------------------------------------
 		
-		self.connect(
-			box_stdButtons,
-			QtCore.SIGNAL('accepted()'),
-			self.applyChangesAndAccept
-		)
-		self.connect(
-			box_stdButtons,
-			QtCore.SIGNAL('rejected()'),
-			self.reject
-		)
-		self.connect(
-			self.button_reset,
-			QtCore.SIGNAL('clicked()'),
-			self.resetValues
-		)
-		self.connect(
-			button_lookUp,
-			QtCore.SIGNAL('clicked()'),
-			self.lookUpCoordinates
-		)
-		self.connect(
-			self.edit_exiftool,
-			QtCore.SIGNAL('editingFinished()'),
-			self.exiftoolChanged
-		)
-		self.connect(
-			self.edit_gimp,
-			QtCore.SIGNAL('editingFinished()'),
-			self.gimpChanged
-		)
-		self.connect(
-			button_find_exiftool,
-			QtCore.SIGNAL('clicked()'),
-			self.selectExiftool
-		)
-		self.connect(
-			button_find_gimp,
-			QtCore.SIGNAL('clicked()'),
-			self.selectTheGimp
-		)
-		self.connect(
-			self.spinbox_stepsize,
-			QtCore.SIGNAL('editingFinished()'),
-			self.stepsizeChanged
-		)
-		self.connect(
-			self.spinbox_readsize,
-			QtCore.SIGNAL('editingFinished()'),
-			self.readsizeChanged
-		)
-		
-		self.connect(
-			self.spinbox_latitude,
-			QtCore.SIGNAL('editingFinished()'),
-			self.latitudeChanged
-		)
-		self.connect(
-			self.spinbox_longitude,
-			QtCore.SIGNAL('editingFinished()'),
-			self.longitudeChanged
-		)
+		box_stdButtons.accepted.connect(self.applyChangesAndAccept)
+#		self.connect(
+#			box_stdButtons,
+#			QtCore.SIGNAL('accepted()'),
+#			self.applyChangesAndAccept
+#		)
+		box_stdButtons.rejected.connect(self.reject)
+#		self.connect(
+#			box_stdButtons,
+#			QtCore.SIGNAL('rejected()'),
+#			self.reject
+#		)
+		self.button_reset.clicked.connect(self.resetValues)
+#		self.connect(
+#			self.button_reset,
+#			QtCore.SIGNAL('clicked()'),
+#			self.resetValues
+#		)
+		button_lookUp.clicked.connect(self.lookUpCoordinates)
+#		self.connect(
+#			button_lookUp,
+#			QtCore.SIGNAL('clicked()'),
+#			self.lookUpCoordinates
+#		)
+		self.edit_exiftool.editingFinished.connect(self.exiftoolChanged)
+#		self.connect(
+#			self.edit_exiftool,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.exiftoolChanged
+#		)
+		self.edit_gimp.editingFinished.connect(self.gimpChanged)
+#		self.connect(
+#			self.edit_gimp,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.gimpChanged
+#		)
+		button_find_exiftool.clicked.connect(self.selectExiftool)
+#		self.connect(
+#			button_find_exiftool,
+#			QtCore.SIGNAL('clicked()'),
+#			self.selectExiftool
+#		)
+		button_find_gimp.clicked.connect(self.selectTheGimp)
+#		self.connect(
+#			button_find_gimp,
+#			QtCore.SIGNAL('clicked()'),
+#			self.selectTheGimp
+#		)
+		self.spinbox_stepsize.editingFinished.connect(self.stepsizeChanged)
+#		self.connect(
+#			self.spinbox_stepsize,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.stepsizeChanged
+#		)
+		self.spinbox_readsize.editingFinished.connect(self.readsizeChanged)
+#		self.connect(
+#			self.spinbox_readsize,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.readsizeChanged
+#		)
+#		
+		self.spinbox_latitude.editingFinished.connect(self.latitudeChanged)
+#		self.connect(
+#			self.spinbox_latitude,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.latitudeChanged
+#		)
+		self.spinbox_longitude.editingFinished.connect(self.longitudeChanged)
+#		self.connect(
+#			self.spinbox_longitude,
+#			QtCore.SIGNAL('editingFinished()'),
+#			self.longitudeChanged
+#		)
 		#-----------------------------------------------------------------------
 		
 		self.setStyleSheet(":disabled { color: gray; }")
@@ -1061,10 +1151,11 @@ class FPPAboutDialog(QtGui.QDialog):
 		
 		self.setLayout(layout)
 		
-		self.connect(
-			box_stdButtons,
-			QtCore.SIGNAL('rejected()'),
-			self.accept
-		)
+		box_stdButtons.rejected.connect(self.accept)
+#		self.connect(
+#			box_stdButtons,
+#			QtCore.SIGNAL('rejected()'),
+#			self.accept
+#		)
 
 

@@ -28,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2015-07-01
+Version: 2015-10-25
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -119,13 +119,14 @@ Files
 
 FotoPreProcessor.py           main program
 FotoPreProcessorItem.py       custom PyQt4.QtGui.QListWidgetItem
+FotoPreProcessorOSM.html      custom OpenStreetMap webpage
 FotoPreProcessorTools.py      classes for GeoTagging, timezone correction etc.
 FotoPreProcessorWidgets.py    custom widgets: docks and dialogs
-FotoPreProcessorOSM.html      custom OpenStreetMap webpage
 FotoPreProcessor.exiftool     definition of a special FPPModel tag for exiftool
-Makefile                      Makefile for translation and packaging tasks
+Makefile                      Makefile for translation tasks
 i18n/FotoPreProcessor.de.qm   binary translation information
 i18n/FotoPreProcessor.de.ts   translation source file
+icons/FPP.png                 FotoPreProcessor application item
 icons/Marker2.png             icon "marker" to mark a location
 icons/changed.png             icon "wrench" to mark changed images
 icons/unknownPicture2.png     icon "unknown picture"
@@ -166,3 +167,6 @@ Changelog
 
 2015-07-01: further Python3 porting, improvement of arg handling,
             updated translation
+
+2015-10-25: some fixes; changes can now be saved/loaded for delayed application,
+            upgrade to new signal/slot mechanism
