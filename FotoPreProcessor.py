@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-VERSION="2015-10-25"
+VERSION="2015-10-26"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
@@ -29,6 +29,7 @@ VERSION="2015-10-25"
 # 2015-06-29: update to Python3, location search (geolocator), transition to GitHub
 # 2015-10-25: minor fixes, new feature: change management (changes -> save/load file),
 #             upgrade to new signal/slot mechanism, file naming now configurable
+# 2015-10-26: flexible file naming activated
 
 import sys,os,subprocess,time,pytz,datetime,codecs,xml.dom.minidom,base64,re,yaml
 
@@ -1518,9 +1519,6 @@ This method creates a "save file" dialog."""
 	
 			try:    self.float_readdelay = float(settings.value("ReadDelay",0.0001))
 			except: self.float_readdelay = 0.0001
-			
-			try:    self.lst_naming_cmd = settings.value("NamingScheme",dlg.DEFAULT_NAMING_SCHEME).split(" ")
-			except: self.lst_naming_cmd = dlg.DEFAULT_NAMING_SCHEME.split(" ")
 	
 	#-----------------------------------------------------------------------
 	

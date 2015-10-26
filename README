@@ -28,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2015-10-25
+Version: 2015-10-26
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -170,3 +170,5 @@ Changelog
 
 2015-10-25: some fixes; changes can now be saved/loaded for delayed application,
             upgrade to new signal/slot mechanism, file naming is now configurable
+
+2015-10-26: flexible file naming activated, minor fixes

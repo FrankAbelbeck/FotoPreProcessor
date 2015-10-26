@@ -20,6 +20,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 2015-06-16: migration to Python3
+2015-10-25: upgrade to new signal/slot mechanism, file naming now configurable
+2015-10-26: flexible file naming activated
 """
 
 import subprocess,sys,os.path,codecs,re,time,yaml
@@ -388,6 +390,7 @@ Attributes: Delete on close"""
 		
 		self.list_keywords.itemSelectionChanged.connect(self.updateRemoveButtonState)
 		self.button_add.clicked.connect(self.addKeyword)
+		self.button_remove.clicked.connect(self.removeKeyword)
 		self.button_reset.clicked.connect(self.triggerReset)
 		
 		self.setKeywords()
@@ -625,18 +628,26 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 		if len(self.dict_parameters) > 0:
 			settings = QtCore.QSettings()
 			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
-			
-			# rename all files
-			command = [ self.ustr_path_exiftool,
-				"-config",str(os.path.join(sys.path[0],"FotoPreProcessor.exiftool")),
-				"-P",
-				"-overwrite_original",
-				"-d","%Y%m%d-%H%M%S",
-				"-FileName<${DateTimeOriginal}%-2nc-${FPPModel}.%le"
-			]
-			command.extend(self.dict_parameters.keys())
-			self.konsole.appendPlainText(" ".join(command)+"\n")
-			self.lst_commands.append(command)
+			if settings.value("NamingEnabled",True) in ("true",True):
+				# settings say files should be renamed: extract naming scheme
+				namingScheme = settings.value("NamingScheme",FPPSettingsDialog.DEFAULT_NAMING_SCHEME)
+				# construct command to rename all files;
+				# naming scheme is given as a string of exiftool parameters:
+				# split along whitespace characters
+				command = [ self.ustr_path_exiftool,
+					"-config",str(os.path.join(sys.path[0],"FotoPreProcessor.exiftool")),
+					"-P",
+					"-overwrite_original"
+				]
+#					"-d","%Y%m%d-%H%M%S",
+#					"-FileName<${DateTimeOriginal}%-2nc-${FPPModel}.%le"
+#				]
+				command.extend(namingScheme.split())
+				# parameter dict keys = all known files
+				command.extend(self.dict_parameters.keys())
+				# append command
+				self.konsole.appendPlainText(" ".join(command)+"\n")
+				self.lst_commands.append(command)
 		else:
 			# files not yet recorded: display hint
 			self.konsole.appendHtml("<i>"+QtCore.QCoreApplication.translate("Dialog","There are no changes to apply.\nEither load a changes file or edit some pictures.")+"</i>\n")
@@ -660,6 +671,11 @@ class FPPApplyChangesDialog(QtGui.QDialog):
 			# dialog is executing commands: stop it via isRunning variable
 			self.bool_isRunning = False
 	
+	
+	def closeEvent(self,event=None):
+		"""Catch close-by-upper-right-cross aka window close command.
+This calls cancelOp to handle different states of command execution."""
+		self.cancelOp()
 	
 	def execute(self):
 		self.box_stdButtons.removeButton(self.button_execute)
