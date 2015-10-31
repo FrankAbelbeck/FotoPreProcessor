@@ -103,27 +103,11 @@ class FPPClickableLabel(QtGui.QLabel):
 		self.loadNext.emit()
 	def fgoBack(self):
 		self.goBack.emit()
-	def updateItem(self,filepath,orientation,imgsize,tooltip):
+	def updateItem(self,filepath,rotation,imgsize,tooltip):
 		QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 		matrix = QtGui.QTransform()
-		if orientation == 2:
-			matrix.scale(-1,1)
-		elif orientation == 3:
-			matrix.rotate(180)
-		elif orientation == 4:
-			matrix.scale(1,-1)
-		elif orientation == 5:
-			matrix.scale(-1,1)
-			matrix.rotate(270)
-		elif orientation == 6:
-			matrix.rotate(90)
-		elif orientation == 7:
-			matrix.scale(1,-1)
-			matrix.rotate(90)
-		elif orientation == 8:
-			matrix.rotate(270)
-		self.image = QtGui.QImage(filepath)
-		
+		matrix.rotate(rotation)
+		self.image = QtGui.QImage(filepath).transformed(matrix)
 		self.setPixmap(QtGui.QPixmap().fromImage(self.image))
 		QtGui.QApplication.restoreOverrideCursor()
 		self.setToolTip(tooltip)
@@ -263,7 +247,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_rotateRight = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Rotate right"),self)
 		self.action_locationLookUp = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Look up coordinates..."),self)
 		self.action_openGimp = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Open with the GIMP..."),self)
-		self.action_resetOrientation = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset orientation"),self)
+		self.action_resetRotation = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset orientation"),self)
 		self.action_resetLocation = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset coordinates"),self)
 		self.action_resetKeywords = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset keywords"),self)
 		self.action_resetTimezones = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset timezones"),self)
@@ -289,7 +273,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_rotateRight.setShortcut(QtGui.QKeySequence("r"))
 		self.action_locationLookUp.setShortcut(QtGui.QKeySequence("g"))
 		self.action_openGimp.setShortcut(QtGui.QKeySequence("c"))
-		self.action_resetOrientation.setShortcut(QtGui.QKeySequence("n"))
+		self.action_resetRotation.setShortcut(QtGui.QKeySequence("n"))
 		action_quit.setShortcut(QtGui.QKeySequence("Ctrl+Q"))
 		self.action_openDir.setShortcut(QtGui.QKeySequence("Ctrl+O"))
 		self.action_apply.setShortcut(QtGui.QKeySequence("Ctrl+S"))
@@ -347,7 +331,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.menu_edit.addAction(self.action_locationLookUp)
 		self.menu_edit.addSeparator()
 		menu_reset = self.menu_edit.addMenu(QtCore.QCoreApplication.translate("Menu","Reset values"))
-		menu_reset.addAction(self.action_resetOrientation)
+		menu_reset.addAction(self.action_resetRotation)
 		menu_reset.addAction(self.action_resetLocation)
 		menu_reset.addAction(self.action_resetTimezones)
 		menu_reset.addAction(self.action_resetKeywords)
@@ -419,7 +403,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_rotateLeft.triggered.connect(self.rotateImageLeft)
 		self.action_rotateRight.triggered.connect(self.rotateImageRight)
 		self.action_resetAll.triggered.connect(self.resetAll)
-		self.action_resetOrientation.triggered.connect(self.resetOrientation)
+		self.action_resetRotation.triggered.connect(self.resetRotation)
 		self.action_resetLocation.triggered.connect(self.resetLocation)
 		self.action_resetTimezones.triggered.connect(self.resetTimezones)
 		self.action_resetKeywords.triggered.connect(self.resetKeywords)
@@ -429,7 +413,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		#---------------------------------------------------------------
 		
-		self.action_resetOrientation.changed.connect(self.updateResetAllAction)
+		self.action_resetRotation.changed.connect(self.updateResetAllAction)
 		self.action_resetLocation.changed.connect(self.updateResetAllAction)
 		self.action_resetTimezones.changed.connect(self.updateResetAllAction)
 		self.action_resetKeywords.changed.connect(self.updateResetAllAction)
@@ -941,7 +925,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_openGimp.setEnabled(False)
 		
 		self.action_resetAll.setEnabled(False)
-		self.action_resetOrientation.setEnabled(False)
+		self.action_resetRotation.setEnabled(False)
 		self.action_resetLocation.setEnabled(False)
 		self.action_resetTimezones.setEnabled(False)
 		self.action_resetKeywords.setEnabled(False)
@@ -965,7 +949,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def openPreviewImage(self,item):
 		# present preview of the image list item currently double-clicked
 		self.list_images.setCurrentRow(self.list_images.currentRow(),QtGui.QItemSelectionModel.ClearAndSelect)
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 		self.scroll_image_label.adjustSize()
 		self.main_widget.setCurrentIndex(1)
 	
@@ -985,7 +969,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = index - 1
 		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 		self.scroll_image_label.adjustSize()
 	
 	
@@ -999,7 +983,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = index + 1
 		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 		self.scroll_image_label.adjustSize()
 	
 	
@@ -1195,7 +1179,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.action_openGimp.setEnabled(len(self.ustr_path_gimp) > 0)
 			
 			self.action_resetAll.setEnabled(orientationEdited or locationEdited or timezonesEdited or keywordsEdited)
-			self.action_resetOrientation.setEnabled(orientationEdited)
+			self.action_resetRotation.setEnabled(orientationEdited)
 			self.action_resetLocation.setEnabled(locationEdited)
 			self.action_resetTimezones.setEnabled(timezonesEdited)
 			self.action_resetKeywords.setEnabled(keywordsEdited)
@@ -1221,7 +1205,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			self.action_openGimp.setEnabled(False)
 			
 			self.action_resetAll.setEnabled(False)
-			self.action_resetOrientation.setEnabled(False)
+			self.action_resetRotation.setEnabled(False)
 			self.action_resetLocation.setEnabled(False)
 			self.action_resetTimezones.setEnabled(False)
 			self.action_resetKeywords.setEnabled(False)
@@ -1236,22 +1220,22 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	def rotateImageLeft(self):
 		for item in self.list_images.selectedItems(): item.rotateLeft()
-		self.action_resetOrientation.setEnabled(True)
+		self.action_resetRotation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
 	def rotateImageRight(self):
 		for item in self.list_images.selectedItems(): item.rotateRight()
-		self.action_resetOrientation.setEnabled(True)
+		self.action_resetRotation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
-	def resetOrientation(self):
-		for item in self.list_images.selectedItems(): item.resetOrientation()
+	def resetRotation(self):
+		for item in self.list_images.selectedItems(): item.resetRotation()
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.orientation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
 			self.scroll_image_label.adjustSize()
 	
 	#-----------------------------------------------------------------------
@@ -1473,7 +1457,7 @@ This method creates a "save file" dialog."""
 	
 	def updateResetAllAction(self):
 		self.action_resetAll.setEnabled(
-			self.action_resetOrientation.isEnabled() or \
+			self.action_resetRotation.isEnabled() or \
 			self.action_resetLocation.isEnabled() or \
 			self.action_resetTimezones.isEnabled() or \
 			self.action_resetKeywords.isEnabled()

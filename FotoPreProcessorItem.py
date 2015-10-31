@@ -117,11 +117,11 @@ Appropriate methods for handling and showing these properties are defined, too."
 		self.str_copyright = str()
 		
 		self.int_orientation = 1
+		self.int_rotation = 0
 		self.tpl_timezones = ("UTC","UTC")
 		self.tpl_location = tuple()
 		self.tpl_keywords = tuple()
 		
-		self.int_saved_orientation = 1
 		self.tpl_saved_timezones = ("UTC","UTC")
 		self.tpl_saved_location = tuple()
 		self.tpl_saved_keywords = tuple()
@@ -245,7 +245,7 @@ Appropriate methods for handling and showing these properties are defined, too."
 		"""Update "edited" state of the item (updates fields and UserRole).
 
 Compare orientation, timeshift, location, keywords to previously saved values."""
-		self.bool_editedOrientation = (self.int_orientation != self.int_saved_orientation)
+		self.bool_editedOrientation = (self.int_rotation != 0)
 		self.bool_editedTimezones = (self.tpl_timezones != self.tpl_saved_timezones)
 		self.bool_editedLocation = (self.tpl_location != self.tpl_saved_location)
 		self.bool_editedKeywords = (self.tpl_keywords != self.tpl_saved_keywords)
@@ -426,35 +426,61 @@ An integer as well as a string is accepted:
 Horizontal (normal) orientation (=1) is set a default."""
 		try:
 			self.int_orientation = self.MapStringToOrientation[str(value)]
-			self.updateIcon()
-			self.updateEditState()
-			self.updateToolTip()
 		except:
 			try:
 				self.int_orientation = max(min(int(value),8),1)
-				self.updateIcon()
-				self.updateEditState()
-				self.updateToolTip()
 			except:
 				pass
-		
-	def orientation(self):
-		"""Return the item's orientation value as an integer. Equals 1 by default."""
-		return self.int_orientation
+		self.updateIcon()
+		self.updateEditState()
+		self.updateToolTip()
 	
-		
-	def rotateLeft(self):
-		"""Set orientation value to a new value, rotated counter-clockwise.
+	
+	def orientation(self):
+		"""Return the item's orientation value as an integer. Equals 1 by default.
+This takes any additional rotations into account.
 
-Rotation cylce: 1 -> 8 -> 3 -> 6 -> 1"""
-		if self.int_orientation == 1:   # normal -> 270 CW
-			self.int_orientation = 8
-		elif self.int_orientation == 3: # 180 -> 90 CW
-			self.int_orientation = 6
-		elif self.int_orientation == 6: # 90 CW -> normal
-			self.int_orientation = 1
-		elif self.int_orientation == 8: # 270 CW -> 180
-			self.int_orientation = 3
+Orientation values according to EXIF:
+   1 <---> "Horizontal (normal)"
+   2 <---> "Mirror horizontal"
+   3 <---> "Rotate 180"
+   4 <---> "Mirror vertical"
+   5 <---> "Mirror horizontal and rotate 270 CW"
+   6 <---> "Rotate 90 CW"
+   7 <---> "Mirror horizontal and rotate 90 CW"
+   8 <---> "Rotate 270 CW"
+
+Applying 90° steps, clockwise, results in following EXIF orientation cycle:
+   1 --> 8 --> 3 --> 6 --> 1
+   2 --> 7 --> 4 --> 5 --> 2 (mirrored variant)
+
+"""
+		# pre-define cycles
+		cycle_standard = (1,6,3,8)
+		cycle_mirrored = (2,5,4,7)
+		
+		# no rotation: just return orientation
+		if self.int_rotation == 0: return self.int_orientation
+		
+		# otherwise: take rotation into account by applying above cycles
+		if self.int_orientation in cycle_standard:
+			# command explained:
+			# 1. get index of the cycle item which holds the current orientation value
+			# 2. calculate the rotation angle offset (90° steps)
+			# 3. step on in the cycle from current orientation, wrap around at the boundaries (4 elements -> mod 4)
+			return cycle_standard[(cycle_standard.index(self.int_orientation) + self.int_rotation // 90) % 4]
+		else:
+			return cycle_mirrored[(cycle_mirrored.index(self.int_orientation) + self.int_rotation // 90) % 4]
+	
+	
+	def rotation(self):
+		"""Return the item's rotation value [degrees, default: 0] as an integer. """
+		return self.int_rotation
+	
+	
+	def rotateLeft(self):
+		"""Subtract 90° from the rotation value and limit to range [0;360[."""
+		self.int_rotation = (self.int_rotation - 90) % 360
 		self.updateIcon()
 		self.updateEditState()
 		self.updateToolTip()
@@ -462,24 +488,15 @@ Rotation cylce: 1 -> 8 -> 3 -> 6 -> 1"""
 	
 	def rotateNormal(self):
 		"""Set orientation value to normal orientation (=1)."""
-		self.int_orientation = 1
+		self.int_rotation = 0
 		self.updateIcon()
 		self.updateEditState()
 		self.updateToolTip()
 	
 	
 	def rotateRight(self):
-		"""Set orientation value to a new value, rotated clockwise.
-
-Rotation cylce: 1 -> 6 -> 3 -> 8 -> 1"""
-		if self.int_orientation == 1:   # normal -> 90 CW
-			self.int_orientation = 6
-		elif self.int_orientation == 3: # 180 -> 270 CW
-			self.int_orientation = 8
-		elif self.int_orientation == 6: # 90 CW -> 180
-			self.int_orientation = 3
-		elif self.int_orientation == 8: # 270 CW -> normal
-			self.int_orientation = 1
+		"""Add 90° to the rotation value and limit to range [0;360[."""
+		self.int_rotation = (self.int_rotation + 90) % 360
 		self.updateIcon()
 		self.updateEditState()
 		self.updateToolTip()
@@ -624,6 +641,7 @@ If any of the coordinates equals None, location information will be erased."""
 in order to create a new item icon."""
 		iconsize = self.listWidget().iconSize()
 		matrix = QtGui.QTransform()
+		# calculate transformation matrix (QTransform rotates counter-clockwise!)
 		if self.int_orientation == 2:
 			matrix.scale(-1,1)
 		elif self.int_orientation == 3:
@@ -640,6 +658,9 @@ in order to create a new item icon."""
 			matrix.rotate(90)
 		elif self.int_orientation == 8:
 			matrix.rotate(270)
+		# apply rotation
+		matrix.rotate(self.int_rotation)
+		
 		thumb = self.pix_thumb.transformed(
 				matrix,
 				QtCore.Qt.SmoothTransformation
@@ -708,7 +729,6 @@ in order to create a new item icon."""
 	
 	def saveState(self):
 		"""Back-up the item's state."""
-		self.int_saved_orientation = self.int_orientation
 		self.tpl_saved_keywords = self.tpl_keywords
 		self.tpl_saved_location = self.tpl_location
 		self.tpl_saved_timezones = self.tpl_timezones
@@ -717,9 +737,12 @@ in order to create a new item icon."""
 		self.updateToolTip()
 	
 	
-	def resetOrientation(self):
-		"""Return to previously saved orientation."""
-		self.setOrientation(self.int_saved_orientation)
+	def resetRotation(self):
+		"""Discard any rotation."""
+		self.int_orientation = 0
+		self.updateIcon()
+		self.updateEditState()
+		self.updateToolTip()
 	
 	
 	def resetTimezones(self):
@@ -746,7 +769,7 @@ in order to create a new item icon."""
 		"""Reset all properties to previously saved values.
 
 Convenience method to call all other reset* methods at once."""
-		self.resetOrientation()
+		self.resetRotation()
 		self.resetTimezones()
 		self.resetKeywords()
 		self.resetLocation()
