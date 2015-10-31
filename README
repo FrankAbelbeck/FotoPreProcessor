@@ -28,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2015-10-26
+Version: 2015-11-01
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -172,3 +172,6 @@ Changelog
             upgrade to new signal/slot mechanism, file naming is now configurable
 
 2015-10-26: flexible file naming activated, minor fixes
+
+2015-11-01: fixed preview image auto-rotation behaviour to avoid applying a
+            picture's orientation twice

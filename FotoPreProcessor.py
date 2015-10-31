@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-VERSION="2015-10-26"
+VERSION="2015-11-01"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
