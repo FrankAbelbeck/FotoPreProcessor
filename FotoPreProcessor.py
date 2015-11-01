@@ -484,19 +484,22 @@ class FPPMainWindow(QtGui.QMainWindow):
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Exit Application"),
 					QtCore.QCoreApplication.translate("Dialog","Some changes were made.\nDo you want to apply them before exiting?"),
-					QtGui.QMessageBox.Apply | QtGui.QMessageBox.Discard 
+					QtGui.QMessageBox.Abort | QtGui.QMessageBox.Apply | QtGui.QMessageBox.Discard 
 				)
 			else:
 				answer = QtGui.QMessageBox.question(
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Exit Application"),
 					QtCore.QCoreApplication.translate("Dialog","Some changes were made.\nDo you want to apply or save them before exiting?"),
-					QtGui.QMessageBox.Apply | QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
+					QtGui.QMessageBox.Abort | QtGui.QMessageBox.Apply | QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
 				)
 			if answer == QtGui.QMessageBox.Apply:
 				self.applyChanges()
 			elif answer == QtGui.QMessageBox.Save:
 				self.saveChanges()
+			elif answer == QtGui.QMessageBox.Abort:
+				return False
+		
 		self.dock_copyright.close() # i.e.: save copyright DB
 		self.dock_keywords.close()  # i.e.: save keywords DB
 		# save miscellaneous settings
@@ -505,19 +508,21 @@ class FPPMainWindow(QtGui.QMainWindow):
 		settings.setValue("IconSize",self.ustr_iconsize)
 		settings.setValue("SortCriterion",self.int_sorting)
 		settings.setValue("WindowSize",self.size())
+		return True
 	
 	
 	def quitEvent(self):
 		"""Program shall quit: check for changes and quit."""
-		self.checkOnExit()
-		QtGui.QApplication.instance().quit()
+		if self.checkOnExit():
+			QtGui.QApplication.instance().quit()
 	
 	
 	def closeEvent(self,event):
 		"""Window received close event: check for changes and accept event."""
-		self.checkOnExit()
-		event.accept()
-	
+		if self.checkOnExit():
+			event.accept()
+		else:
+			event.ignore()
 	
 	def selectDirectory(self):
 		path = QtGui.QFileDialog.getExistingDirectory(self,
