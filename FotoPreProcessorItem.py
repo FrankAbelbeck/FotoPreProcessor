@@ -463,14 +463,17 @@ Applying 90° steps, clockwise, results in following EXIF orientation cycle:
 		if self.int_rotation == 0: return self.int_orientation
 		
 		# otherwise: take rotation into account by applying above cycles
-		if self.int_orientation in cycle_standard:
-			# command explained:
-			# 1. get index of the cycle item which holds the current orientation value
-			# 2. calculate the rotation angle offset (90° steps)
-			# 3. step on in the cycle from current orientation, wrap around at the boundaries (4 elements -> mod 4)
-			return cycle_standard[(cycle_standard.index(self.int_orientation) + self.int_rotation // 90) % 4]
-		else:
-			return cycle_mirrored[(cycle_mirrored.index(self.int_orientation) + self.int_rotation // 90) % 4]
+		try:
+			if self.int_orientation in cycle_standard:
+				# command explained:
+				# 1. get index of the cycle item which holds the current orientation value
+				# 2. calculate the rotation angle offset (90° steps)
+				# 3. step on in the cycle from current orientation, wrap around at the boundaries (4 elements -> mod 4)
+				return cycle_standard[(cycle_standard.index(self.int_orientation) + self.int_rotation // 90) % 4]
+			else:
+				return cycle_mirrored[(cycle_mirrored.index(self.int_orientation) + self.int_rotation // 90) % 4]
+		except:
+			print(self.str_filename,sys.exc_info())
 	
 	
 	def rotation(self):
@@ -636,31 +639,65 @@ If any of the coordinates equals None, location information will be erased."""
 		#-----------------------------------------------------------------------
 	
 	
+	def checkOrientation(self,width,height):
+		"""Check given image dimensions against internal data.
+Returns False if a 90 degree rotation is required due to EXIF Orientation
+information, but the dimensions are equal to the original dimensions.
+
+Args:
+   width: integer image dimension (pixels)
+   height: integer image dimension (pixels)
+
+Returns:
+   A boolean."""
+		if self.int_orientation in (5,6,7,8) and self.int_width == width and self.int_height == height:
+			return False
+		else:
+			return True
+	
+	
+	def applyOrientation(self,matrix):
+		"""Apply scaling and rotation operations according to EXIF orientation data.
+
+Args:
+   matrix: a QTransform matrix which will be modified
+
+Returns:
+   None."""
+		if self.int_orientation == 2:
+			# 2 = "Mirror horizontal"
+			matrix.scale(-1,1)
+		elif self.int_orientation == 3:
+			# 3 = "Rotate 180"
+			matrix.rotate(180)
+		elif self.int_orientation == 4:
+			# 4 = "Mirror vertical"
+			matrix.scale(1,-1)
+		elif self.int_orientation == 5:
+			# 5 = "Mirror horizontal and rotate 270 CW"
+			matrix.scale(-1,1)
+			matrix.rotate(270)
+		elif self.int_orientation == 6:
+			# 6 = "Rotate 90 CW"
+			matrix.rotate(90)
+		elif self.int_orientation == 7:
+			# 7 = "Mirror horizontal and rotate 90 CW"
+			matrix.scale(1,-1)
+			matrix.rotate(90)
+		elif self.int_orientation == 8:
+			# 8 = "Rotate 270 CW"
+			matrix.rotate(270)
+		
+	
 	def updateIcon(self):
 		"""Apply currently set orientation to stored thumbnail image
 in order to create a new item icon."""
 		iconsize = self.listWidget().iconSize()
 		matrix = QtGui.QTransform()
-		# calculate transformation matrix (QTransform rotates counter-clockwise!)
-		if self.int_orientation == 2:
-			matrix.scale(-1,1)
-		elif self.int_orientation == 3:
-			matrix.rotate(180)
-		elif self.int_orientation == 4:
-			matrix.scale(1,-1)
-		elif self.int_orientation == 5:
-			matrix.scale(-1,1)
-			matrix.rotate(270)
-		elif self.int_orientation == 6:
-			matrix.rotate(90)
-		elif self.int_orientation == 7:
-			matrix.scale(1,-1)
-			matrix.rotate(90)
-		elif self.int_orientation == 8:
-			matrix.rotate(270)
+		# assume thumbnails to be not auto-rotated: apply orientation matrix
+		self.applyOrientation(matrix)
 		# apply rotation
 		matrix.rotate(self.int_rotation)
-		
 		thumb = self.pix_thumb.transformed(
 				matrix,
 				QtCore.Qt.SmoothTransformation
@@ -739,7 +776,7 @@ in order to create a new item icon."""
 	
 	def resetRotation(self):
 		"""Discard any rotation."""
-		self.int_orientation = 0
+		self.int_rotation = 0
 		self.updateIcon()
 		self.updateEditState()
 		self.updateToolTip()

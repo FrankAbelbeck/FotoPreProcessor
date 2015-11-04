@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-VERSION="2015-11-01"
+VERSION="2015-11-04"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
@@ -103,14 +103,20 @@ class FPPClickableLabel(QtGui.QLabel):
 		self.loadNext.emit()
 	def fgoBack(self):
 		self.goBack.emit()
-	def updateItem(self,filepath,rotation,imgsize,tooltip):
+	def updateItem(self,filepath,item):
 		QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+		self.image = QtGui.QImage(str(os.path.join(filepath,item.filename())))
 		matrix = QtGui.QTransform()
-		matrix.rotate(rotation)
-		self.image = QtGui.QImage(filepath).transformed(matrix)
+		if not item.checkOrientation(self.image.width(),self.image.height()):
+			# image dimensions were not changed during loading although
+			# EXIF information required that: fix this behaviour by manually
+			# applying the orientation transformations to the matrix
+			item.applyOrientation(matrix)
+		matrix.rotate(item.rotation())
+		self.image = self.image.transformed(matrix)
 		self.setPixmap(QtGui.QPixmap().fromImage(self.image))
 		QtGui.QApplication.restoreOverrideCursor()
-		self.setToolTip(tooltip)
+		self.setToolTip(item.toolTip())
 		
 	def resizeEvent(self,event):
 		if self.image:
@@ -954,7 +960,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def openPreviewImage(self,item):
 		# present preview of the image list item currently double-clicked
 		self.list_images.setCurrentRow(self.list_images.currentRow(),QtGui.QItemSelectionModel.ClearAndSelect)
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
 		self.main_widget.setCurrentIndex(1)
 	
@@ -974,7 +980,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = index - 1
 		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
 	
 	
@@ -988,7 +994,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = index + 1
 		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
-		self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
 	
 	
@@ -1227,20 +1233,20 @@ class FPPMainWindow(QtGui.QMainWindow):
 		for item in self.list_images.selectedItems(): item.rotateLeft()
 		self.action_resetRotation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(self.ustr_path,item)
 			self.scroll_image_label.adjustSize()
 	
 	def rotateImageRight(self):
 		for item in self.list_images.selectedItems(): item.rotateRight()
 		self.action_resetRotation.setEnabled(True)
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(self.ustr_path,item)
 			self.scroll_image_label.adjustSize()
 	
 	def resetRotation(self):
 		for item in self.list_images.selectedItems(): item.resetRotation()
 		if self.main_widget.currentIndex() == 1:
-			self.scroll_image_label.updateItem(str(os.path.join(self.ustr_path,item.filename())),item.rotation(),item.size(),item.toolTip())
+			self.scroll_image_label.updateItem(self.ustr_path,item)
 			self.scroll_image_label.adjustSize()
 	
 	#-----------------------------------------------------------------------

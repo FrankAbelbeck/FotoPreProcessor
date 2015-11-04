@@ -176,3 +176,8 @@ Changelog
 2015-11-01: fixed preview image auto-rotation behaviour to avoid applying a
             picture's orientation twice;
             program termination dialog: user can now return to the program
+
+2015-11-04: fixed orientation bug (prevents exiftoll execution due to an
+            incorrect value, remnant of the preview fix 2015-11-01;
+            fixed preview behaviour: program now checks if a preview image is
+            displayed correctly by comparing dimensions before and after loading
