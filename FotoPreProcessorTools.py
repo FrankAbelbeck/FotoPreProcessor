@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorTools: GeoTagging GUI, timezone management, strings DB
-Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2017 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -18,8 +18,6 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-$Id$
 """
 
 import datetime,pytz,os.path,sys,codecs
@@ -27,7 +25,7 @@ import datetime,pytz,os.path,sys,codecs
 # 2015-06-16: search support needs urllib for requests and json for decoding
 import urllib.request,urllib.parse,json
 
-from PyQt4 import QtGui, QtCore, QtWebKit
+from PyQt5 import QtGui, QtWidgets, QtCore, QtWebKit
 
 
 class FPPTimezone:
@@ -289,15 +287,15 @@ This behaviour can be overridden by setting force=True."""
 
 
 
-class FPPGeoTaggingDialog(QtGui.QDialog):
-	"""Class for an OpenStreetMap-based geotagging dialog based on QtGui.QDialog.
+class FPPGeoTaggingDialog(QtWidgets.QDialog):
+	"""Class for an OpenStreetMap-based geotagging dialog based on QtWidgets.QDialog.
 
 Relies on a custom "FotoPreProcessorOSM.html" file for OpenStreetMap interaction
 and allows to load and store location bookmarks in the application's settings."""
 	
 	def __init__(self,parent=None):
 		"""Constructor; initialise fields, load bookmarks and construct GUI."""
-		QtGui.QDialog.__init__(self,parent)
+		QtWidgets.QDialog.__init__(self,parent)
 		
 		settings = QtCore.QSettings()
 		settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
@@ -310,103 +308,103 @@ and allows to load and store location bookmarks in the application's settings.""
 		except: pass
 		
 		# prepare progressbar (webpage loading progress) and webview
-		self.progressbar = QtGui.QProgressBar()
+		self.progressbar = QtWidgets.QProgressBar()
 		self.webview = QtWebKit.QWebView()
 		
 		# construct bookmark sidebar (bookmark list, add and delete button)
-		self.list_locations = QtGui.QListWidget()
+		self.list_locations = QtWidgets.QListWidget()
 		for name,location in self.bookmarks.listLocations():
-			item = QtGui.QListWidgetItem()
+			item = QtWidgets.QListWidgetItem()
 			item.setText(name)
 			item.setToolTip("{0:9.4f}, {1:9.4f}".format(*location))
 			self.list_locations.addItem(item)
 		
-		self.button_add = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Add..."))
+		self.button_add = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Add..."))
 		self.button_add.setEnabled(False)
 		self.button_add.setDisabled(True)
 		
-		self.button_del = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Delete"))
+		self.button_del = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Delete"))
 		self.button_del.setEnabled(False)
 		self.button_del.setDisabled(True)
 		
-		layout_locbut = QtGui.QHBoxLayout()
+		layout_locbut = QtWidgets.QHBoxLayout()
 		layout_locbut.addWidget(self.button_add)
 		layout_locbut.addWidget(self.button_del)
 		
 		# construct controls for coordinates: lat/lon spinboxes, goto button
-		button_goto = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Go to"))
-		button_goto.setSizePolicy(QtGui.QSizePolicy.Preferred,QtGui.QSizePolicy.Preferred)
-		self.spin_latitude = QtGui.QDoubleSpinBox()
-		self.spin_latitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
+		button_goto = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Go to"))
+		button_goto.setSizePolicy(QtWidgets.QSizePolicy.Preferred,QtWidgets.QSizePolicy.Preferred)
+		self.spin_latitude = QtWidgets.QDoubleSpinBox()
+		self.spin_latitude.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,QtWidgets.QSizePolicy.Fixed)
 		self.spin_latitude.setRange(-84.99999999,85)
 		self.spin_latitude.setDecimals(8)
 		self.spin_latitude.setSuffix(" °")
 		self.spin_latitude.setSingleStep(1)
 		self.spin_latitude.setWrapping(True)
 		
-		self.spin_longitude = QtGui.QDoubleSpinBox()
-		self.spin_longitude.setSizePolicy(QtGui.QSizePolicy.MinimumExpanding,QtGui.QSizePolicy.Fixed)
+		self.spin_longitude = QtWidgets.QDoubleSpinBox()
+		self.spin_longitude.setSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding,QtWidgets.QSizePolicy.Fixed)
 		self.spin_longitude.setRange(-179.99999999,180)
 		self.spin_longitude.setDecimals(8)
 		self.spin_longitude.setSuffix(" °")
 		self.spin_longitude.setSingleStep(1)
 		self.spin_longitude.setWrapping(True)
 		
-		layout_latlon = QtGui.QFormLayout()
+		layout_latlon = QtWidgets.QFormLayout()
 		layout_latlon.addRow(
-			QtGui.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Latitude:")),
+			QtWidgets.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Latitude:")),
 			self.spin_latitude
 		)
 		layout_latlon.addRow(
-			QtGui.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Longitude:")),
+			QtWidgets.QLabel(QtCore.QCoreApplication.translate("GeoLookUpDialog","Longitude:")),
 			self.spin_longitude
 		)
 		
 		# arrange widgets for sidebar and coordinates control
-		layout_coord = QtGui.QHBoxLayout()
+		layout_coord = QtWidgets.QHBoxLayout()
 		layout_coord.addLayout(layout_latlon)
 		layout_coord.addWidget(button_goto)
 		layout_coord.setAlignment(QtCore.Qt.AlignTop)
 		
-		self.edit_search = QtGui.QLineEdit()
-		button_search = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Find"))
+		self.edit_search = QtWidgets.QLineEdit()
+		button_search = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Find"))
 		
-		layout_search = QtGui.QHBoxLayout()
+		layout_search = QtWidgets.QHBoxLayout()
 		layout_search.addWidget(self.edit_search)
 		layout_search.addWidget(button_search)
 		
-		layout_locations = QtGui.QVBoxLayout()
+		layout_locations = QtWidgets.QVBoxLayout()
 		layout_locations.addLayout(layout_search)
 		layout_locations.addWidget(self.list_locations)
 		layout_locations.addLayout(layout_locbut)
 		layout_locations.addLayout(layout_coord)
 		
-		locations = QtGui.QWidget()
+		locations = QtWidgets.QWidget()
 		locations.setLayout(layout_locations)
 		
 		# create standard dialog buttons (ok/cancel)
-		button_ok = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","OK"))
-		button_cancel = QtGui.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Cancel"))
+		button_ok = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","OK"))
+		button_cancel = QtWidgets.QPushButton(QtCore.QCoreApplication.translate("GeoLookUpDialog","Cancel"))
 		
-		layout_buttons = QtGui.QHBoxLayout()
+		layout_buttons = QtWidgets.QHBoxLayout()
 		layout_buttons.addStretch(1)
 		layout_buttons.addWidget(button_ok)
 		layout_buttons.addWidget(button_cancel)
 		
 		# integrate sidebar, controls, webpage and buttons into a central splitter
-		layout_webview = QtGui.QVBoxLayout()
+		layout_webview = QtWidgets.QVBoxLayout()
 		layout_webview.addWidget(self.webview)
 		layout_webview.addLayout(layout_buttons)
 		
-		webview = QtGui.QWidget()
+		webview = QtWidgets.QWidget()
 		webview.setLayout(layout_webview)
 		
-		splitter = QtGui.QSplitter()
+		splitter = QtWidgets.QSplitter()
 		splitter.setOrientation(QtCore.Qt.Horizontal)
 		splitter.addWidget(locations)
 		splitter.addWidget(webview)
 		
-		layout_central = QtGui.QVBoxLayout()
+		layout_central = QtWidgets.QVBoxLayout()
 		layout_central.addWidget(self.progressbar)
 		layout_central.addWidget(splitter)
 		
@@ -569,7 +567,7 @@ Might be empty."""
 		
 		if len(names) == 0:
 			# no matches found, inform user
-			QtGui.QMessageBox.information(
+			QtWidgets.QMessageBox.information(
 				self,
 				QtCore.QCoreApplication.translate("Dialog","GeoSearch Results"),
 				QtCore.QCoreApplication.translate("Dialog","The search yielded no results.")
@@ -579,13 +577,13 @@ Might be empty."""
 			self.setLocation(latitude[0],longitude[0])
 		else:
 			# more than one match: ask user which one to choose
-			dialog_results = QtGui.QInputDialog(self)
-			dialog_results.setOption(QtGui.QInputDialog.UseListViewForComboBoxItems,True)
+			dialog_results = QtWidgets.QInputDialog(self)
+			dialog_results.setOption(QtWidgets.QInputDialog.UseListViewForComboBoxItems,True)
 			dialog_results.setComboBoxEditable(False)
 			dialog_results.setComboBoxItems(names)
 			dialog_results.setWindowTitle(QtCore.QCoreApplication.translate("Dialog","GeoSearch Results"))
 			dialog_results.setLabelText(QtCore.QCoreApplication.translate("Dialog","The following locations were found:"))
-			if dialog_results.exec_() == QtGui.QDialog.Accepted:
+			if dialog_results.exec_() == QtWidgets.QDialog.Accepted:
 				try:
 					i = names.index(dialog_results.textValue())
 					self.setLocation(latitude[i],longitude[i],0)
@@ -603,26 +601,26 @@ This opens a dialog to let the user either choose or type in a new name."""
 		for i in range(0,self.list_locations.count()):
 			lst_names.append(self.list_locations.item(i).text())
 		
-		(name,ok) = QtGui.QInputDialog.getItem(self,
+		(name,ok) = QtWidgets.QInputDialog.getItem(self,
 			QtCore.QCoreApplication.translate("GeoLookUpDialog","Add new Named Location"),
 			QtCore.QCoreApplication.translate("GeoLookUpDialog","Please provide a name for currently set location:"),
 			lst_names,0,True
 		)
 		if ok:
 			if name in lst_names:
-				answer = QtGui.QMessageBox.question(
+				answer = QtWidgets.QMessageBox.question(
 					self,
 					QtCore.QCoreApplication.translate("GeoLookUpDialog","Overwriting Existing Name"),
 					QtCore.QCoreApplication.translate("GeoLookUpDialog","A location with that name exists. Shall it be overwritten?"),
-					QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+					QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
 				)
-				if answer == QtGui.QMessageBox.Yes:
+				if answer == QtWidgets.QMessageBox.Yes:
 					items = self.list_locations.findItems(name,QtCore.Qt.MatchExactly)
 					items[0].setText(name)
 					items[0].setToolTip("{0}, {1}".format(latitude,longitude))
 					self.bookmarks.writeLocation(name,latitude,longitude)
 			else:
-				item = QtGui.QListWidgetItem()
+				item = QtWidgets.QListWidgetItem()
 				item.setText(name)
 				item.setToolTip("{0}, {1}".format(latitude,longitude))
 				self.list_locations.addItem(item)

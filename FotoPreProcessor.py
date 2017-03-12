@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 LICENSE="""
 FotoPreProcessor: manage (EXIF) metadata of images in a directory
-Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2017 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-VERSION="2015-11-04"
+VERSION="2017-03-12"
 
 # FPP displays image files in a given directory and allows extended selection;
 # meant for batch manipulation of orientation, location, timestamp, keywords,
@@ -30,14 +30,15 @@ VERSION="2015-11-04"
 # 2015-10-25: minor fixes, new feature: change management (changes -> save/load file),
 #             upgrade to new signal/slot mechanism, file naming now configurable
 # 2015-10-26: flexible file naming activated
+# 2017-03-12: ported to PyQt5
 
 import sys,os,subprocess,time,pytz,datetime,codecs,xml.dom.minidom,base64,re,yaml
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 
 import FotoPreProcessorWidgets,FotoPreProcessorItem
 
-class FPPClickableLabel(QtGui.QLabel):
+class FPPClickableLabel(QtWidgets.QLabel):
 	# new signal/slot mechanism: define emitted signals instead of using SLOT macro
 	# these must be defined as class vars!
 	leftClicked = QtCore.pyqtSignal()
@@ -51,14 +52,14 @@ class FPPClickableLabel(QtGui.QLabel):
 	def __init__(self):
 		super().__init__()
 		self.image = None
-		self.setSizePolicy(QtGui.QSizePolicy.Ignored,QtGui.QSizePolicy.Ignored)
+		self.setSizePolicy(QtWidgets.QSizePolicy.Ignored,QtWidgets.QSizePolicy.Ignored)
 		self.setScaledContents(False)
 		self.setAlignment(QtCore.Qt.AlignCenter)
 		self.setBackgroundRole(QtGui.QPalette.Dark)
 		
-		self.button_prev = QtGui.QPushButton(QtGui.QIcon.fromTheme("go-previous"),QtCore.QCoreApplication.translate("Preview","Previous"))
-		self.button_next = QtGui.QPushButton(QtGui.QIcon.fromTheme("go-next"),QtCore.QCoreApplication.translate("Preview","Next"))
-		self.button_exit = QtGui.QPushButton(QtGui.QIcon.fromTheme("window-close"),QtCore.QCoreApplication.translate("Preview","Back"))
+		self.button_prev = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("go-previous"),QtCore.QCoreApplication.translate("Preview","Previous"))
+		self.button_next = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("go-next"),QtCore.QCoreApplication.translate("Preview","Next"))
+		self.button_exit = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("window-close"),QtCore.QCoreApplication.translate("Preview","Back"))
 		
 		self.button_prev.clicked.connect(self.floadPrev)
 		self.button_next.clicked.connect(self.floadNext)
@@ -68,18 +69,18 @@ class FPPClickableLabel(QtGui.QLabel):
 		self.button_next.setFlat(True)
 		self.button_exit.setFlat(True)
 		
-		self.button_prev.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_prev.setGraphicsEffect(QtWidgets.QGraphicsOpacityEffect())
 		self.button_prev.graphicsEffect().setOpacity(0.66)
-		self.button_next.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_next.setGraphicsEffect(QtWidgets.QGraphicsOpacityEffect())
 		self.button_next.graphicsEffect().setOpacity(0.66)
-		self.button_exit.setGraphicsEffect(QtGui.QGraphicsOpacityEffect())
+		self.button_exit.setGraphicsEffect(QtWidgets.QGraphicsOpacityEffect())
 		self.button_exit.graphicsEffect().setOpacity(0.66)
 		
 		self.button_prev.setShortcut(QtGui.QKeySequence("Left"))
 		self.button_next.setShortcut(QtGui.QKeySequence("Right"))
 		self.button_exit.setShortcut(QtGui.QKeySequence("Escape"))
 		
-		layout = QtGui.QGridLayout()
+		layout = QtWidgets.QGridLayout()
 		layout.addWidget(self.button_prev,2,0)
 		layout.addWidget(self.button_next,2,2)
 		layout.addWidget(self.button_exit,0,2)
@@ -104,7 +105,7 @@ class FPPClickableLabel(QtGui.QLabel):
 	def fgoBack(self):
 		self.goBack.emit()
 	def updateItem(self,filepath,item):
-		QtGui.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
+		QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
 		self.image = QtGui.QImage(str(os.path.join(filepath,item.filename())))
 		matrix = QtGui.QTransform()
 		if not item.checkOrientation(self.image.width(),self.image.height()):
@@ -115,7 +116,7 @@ class FPPClickableLabel(QtGui.QLabel):
 		matrix.rotate(item.rotation())
 		self.image = self.image.transformed(matrix)
 		self.setPixmap(QtGui.QPixmap().fromImage(self.image))
-		QtGui.QApplication.restoreOverrideCursor()
+		QtWidgets.QApplication.restoreOverrideCursor()
 		self.setToolTip(item.toolTip())
 		
 	def resizeEvent(self,event):
@@ -125,7 +126,7 @@ class FPPClickableLabel(QtGui.QLabel):
 			self.setPixmap(QtGui.QPixmap().fromImage(self.image.scaled(self.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation)))
 
 
-class FPPMainWindow(QtGui.QMainWindow):	
+class FPPMainWindow(QtWidgets.QMainWindow):	
 	"""Main window class. Core element of the HQ."""
 	
 	def __init__(self):
@@ -150,16 +151,16 @@ class FPPMainWindow(QtGui.QMainWindow):
 		if configatstart in ("true",True):
 			# this seems to be the first time FPP is run: configure...
 			dlg = FotoPreProcessorWidgets.FPPSettingsDialog()
-			if dlg.exec_() == QtGui.QDialog.Accepted:
+			if dlg.exec_() == QtWidgets.QDialog.Accepted:
 				settings.setValue("ConfigureAtStartup",False)
 				self.bool_ready = True
 			else:
 				# not properly configured -> display warning message
-				answer = QtGui.QMessageBox.critical(
+				answer = QtWidgets.QMessageBox.critical(
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Initial Configuration Cancelled"),
 					QtCore.QCoreApplication.translate("Dialog","The program was not properly configured and thus is terminated."),
-					QtGui.QMessageBox.Ok
+					QtWidgets.QMessageBox.Ok
 				)
 				self.bool_ready = False
 		else:
@@ -245,26 +246,26 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		#---------------------------------------------------------------
 		
-		self.action_openDir = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Open directory..."),self)
-		self.action_apply = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Apply changes..."),self)
-		self.action_save = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Save changes..."),self)
-		action_quit = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Quit"),self)
-		self.action_rotateLeft = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Rotate left"),self)
-		self.action_rotateRight = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Rotate right"),self)
-		self.action_locationLookUp = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Look up coordinates..."),self)
-		self.action_openGimp = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Open with the GIMP..."),self)
-		self.action_resetRotation = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset orientation"),self)
-		self.action_resetLocation = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset coordinates"),self)
-		self.action_resetKeywords = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset keywords"),self)
-		self.action_resetTimezones = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset timezones"),self)
-		self.action_resetCopyright = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset copyright notice"),self)
-		self.action_resetAll = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Reset everything"),self)
+		self.action_openDir = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Open directory..."),self)
+		self.action_apply = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Apply changes..."),self)
+		self.action_save = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Save changes..."),self)
+		action_quit = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Quit"),self)
+		self.action_rotateLeft = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Rotate left"),self)
+		self.action_rotateRight = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Rotate right"),self)
+		self.action_locationLookUp = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Look up coordinates..."),self)
+		self.action_openGimp = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Open with the GIMP..."),self)
+		self.action_resetRotation = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset orientation"),self)
+		self.action_resetLocation = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset coordinates"),self)
+		self.action_resetKeywords = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset keywords"),self)
+		self.action_resetTimezones = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset timezones"),self)
+		self.action_resetCopyright = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset copyright notice"),self)
+		self.action_resetAll = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Reset everything"),self)
 		
-		action_config = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Configure FPP..."),self)
+		action_config = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Configure FPP..."),self)
 		
-		self.action_sortByName = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Sort by filename"),self)
-		self.action_sortByTime = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Sort by timestamp"),self)
-		self.action_sortByCamera = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","Sort by camera"),self)
+		self.action_sortByName = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Sort by filename"),self)
+		self.action_sortByTime = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Sort by timestamp"),self)
+		self.action_sortByCamera = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","Sort by camera"),self)
 		self.action_sortByName.setCheckable(True)
 		self.action_sortByTime.setCheckable(True)
 		self.action_sortByCamera.setCheckable(True)
@@ -272,8 +273,8 @@ class FPPMainWindow(QtGui.QMainWindow):
 		self.action_sortByTime.setChecked(self.int_sorting == FotoPreProcessorItem.FPPGalleryItem.SortByTime)
 		self.action_sortByCamera.setChecked(self.int_sorting == FotoPreProcessorItem.FPPGalleryItem.SortByCamera)
 		
-		action_about = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","About FotoPreProcessor..."),self)
-		action_aboutQt = QtGui.QAction(QtCore.QCoreApplication.translate("Menu","About Qt..."),self)
+		action_about = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","About FotoPreProcessor..."),self)
+		action_aboutQt = QtWidgets.QAction(QtCore.QCoreApplication.translate("Menu","About Qt..."),self)
 		
 		self.action_rotateLeft.setShortcut(QtGui.QKeySequence("l"))
 		self.action_rotateRight.setShortcut(QtGui.QKeySequence("r"))
@@ -290,12 +291,12 @@ class FPPMainWindow(QtGui.QMainWindow):
 		
 		#---------------------------------------------------------------
 		
-		self.list_images = QtGui.QListWidget(self)
+		self.list_images = QtWidgets.QListWidget(self)
 		self.list_images.setItemDelegate(FotoPreProcessorItem.FPPGalleryItemDelegate(QtGui.QIcon(os.path.join(sys.path[0],"icons","changed.png"))))
 		self.list_images.setIconSize(QtCore.QSize(128,128))
-		self.list_images.setViewMode(QtGui.QListView.IconMode)
-		self.list_images.setResizeMode(QtGui.QListView.Adjust)
-		self.list_images.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+		self.list_images.setViewMode(QtWidgets.QListView.IconMode)
+		self.list_images.setResizeMode(QtWidgets.QListView.Adjust)
+		self.list_images.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 		self.list_images.setDragEnabled(False)
 		self.list_images.setUniformItemSizes(True)
 		
@@ -361,17 +362,17 @@ class FPPMainWindow(QtGui.QMainWindow):
 		menu_docks.addAction(self.dock_keywords.toggleViewAction())
 		menu_docks.addAction(self.dock_copyright.toggleViewAction())
 		
-		actiongroup_iconSize = QtGui.QActionGroup(self)
+		actiongroup_iconSize = QtWidgets.QActionGroup(self)
 		sizes = list(self.dct_iconsize.keys())
 		sizes.sort()
 		for size in sizes:
-			action_iconSize = QtGui.QAction(size,self)
+			action_iconSize = QtWidgets.QAction(size,self)
 			action_iconSize.setCheckable(True)
 			action_iconSize.setChecked(size == self.ustr_iconsize)
 			actiongroup_iconSize.addAction(action_iconSize)
 			self.menu_iconSize.addAction(action_iconSize)
 		
-		actiongroup_sorting = QtGui.QActionGroup(self)
+		actiongroup_sorting = QtWidgets.QActionGroup(self)
 		actiongroup_sorting.addAction(self.action_sortByName)
 		actiongroup_sorting.addAction(self.action_sortByTime)
 		actiongroup_sorting.addAction(self.action_sortByCamera)
@@ -458,7 +459,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 		#---------------------------------------------------------------
 		# construct main window
 		#---------------------------------------------------------------
-		self.main_widget = QtGui.QStackedWidget()
+		self.main_widget = QtWidgets.QStackedWidget()
 		self.main_widget.addWidget(self.list_images)
 		self.main_widget.addWidget(self.scroll_image_label)
 		self.setCentralWidget(self.main_widget)
@@ -486,24 +487,24 @@ class FPPMainWindow(QtGui.QMainWindow):
 		if edited:
 			if self.wasSaved:
 				# was already saved, so only ask if changes should be applied
-				answer = QtGui.QMessageBox.question(
+				answer = QtWidgets.QMessageBox.question(
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Exit Application"),
 					QtCore.QCoreApplication.translate("Dialog","Some changes were made.\nDo you want to apply them before exiting?"),
-					QtGui.QMessageBox.Abort | QtGui.QMessageBox.Apply | QtGui.QMessageBox.Discard 
+					QtWidgets.QMessageBox.Abort | QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Discard 
 				)
 			else:
-				answer = QtGui.QMessageBox.question(
+				answer = QtWidgets.QMessageBox.question(
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Exit Application"),
 					QtCore.QCoreApplication.translate("Dialog","Some changes were made.\nDo you want to apply or save them before exiting?"),
-					QtGui.QMessageBox.Abort | QtGui.QMessageBox.Apply | QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard 
+					QtWidgets.QMessageBox.Abort | QtWidgets.QMessageBox.Apply | QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard 
 				)
-			if answer == QtGui.QMessageBox.Apply:
+			if answer == QtWidgets.QMessageBox.Apply:
 				self.applyChanges()
-			elif answer == QtGui.QMessageBox.Save:
+			elif answer == QtWidgets.QMessageBox.Save:
 				self.saveChanges()
-			elif answer == QtGui.QMessageBox.Abort:
+			elif answer == QtWidgets.QMessageBox.Abort:
 				return False
 		
 		self.dock_copyright.close() # i.e.: save copyright DB
@@ -520,7 +521,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def quitEvent(self):
 		"""Program shall quit: check for changes and quit."""
 		if self.checkOnExit():
-			QtGui.QApplication.instance().quit()
+			QtWidgets.QApplication.instance().quit()
 	
 	
 	def closeEvent(self,event):
@@ -531,10 +532,10 @@ class FPPMainWindow(QtGui.QMainWindow):
 			event.ignore()
 	
 	def selectDirectory(self):
-		path = QtGui.QFileDialog.getExistingDirectory(self,
+		path = QtWidgets.QFileDialog.getExistingDirectory(self,
 			QtCore.QCoreApplication.translate("Dialog","Select Directory"),
 			self.ustr_path,
-			QtGui.QFileDialog.DontUseNativeDialog
+			QtWidgets.QFileDialog.DontUseNativeDialog
 		)
 		if len(path) > 0:
 			self.setDirectory(path)
@@ -601,7 +602,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	def updateImageList(self):
 		self.list_images.clear()
 		
-		progress = QtGui.QProgressDialog(self)
+		progress = QtWidgets.QProgressDialog(self)
 		progress.setWindowModality(QtCore.Qt.WindowModal)
 		progress.setMinimumDuration(0)
 		progress.setAutoClose(False)
@@ -959,7 +960,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 	
 	def openPreviewImage(self,item):
 		# present preview of the image list item currently double-clicked
-		self.list_images.setCurrentRow(self.list_images.currentRow(),QtGui.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(self.list_images.currentRow(),QtWidgets.QItemSelectionModel.ClearAndSelect)
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
 		self.main_widget.setCurrentIndex(1)
@@ -978,7 +979,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = count - 1
 		else:
 			index = index - 1
-		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(index,QtWidgets.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
@@ -992,7 +993,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			index = 0
 		else:
 			index = index + 1
-		self.list_images.setCurrentRow(index,QtGui.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(index,QtWidgets.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
@@ -1036,13 +1037,13 @@ class FPPMainWindow(QtGui.QMainWindow):
 					pass
 				enabled_geo = True
 			elif l_location > 1 and enabled_geo:
-				answer = QtGui.QMessageBox.question(
+				answer = QtWidgets.QMessageBox.question(
 					self,
 					QtCore.QCoreApplication.translate("Dialog","Location Collision"),
 					QtCore.QCoreApplication.translate("Dialog","The selected images are tagged with different locations.\nDo you want to reset them?\nIf you answer \"No\", GeoTagging will be disabled."),
-					QtGui.QMessageBox.Yes | QtGui.QMessageBox.No
+					QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No
 				)
-				if answer == QtGui.QMessageBox.Yes:
+				if answer == QtWidgets.QMessageBox.Yes:
 					locationEdited = False
 					for item in items:
 						item.setLocation(None,None,None)
@@ -1073,7 +1074,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 					lst_timezones.append("{0} → {1}".format(*tz))
 				lst_timezones.sort()
 				lst_timezones.insert(0,"Disable timezone settings.")
-				(answer,ok) = QtGui.QInputDialog.getItem(self,
+				(answer,ok) = QtWidgets.QInputDialog.getItem(self,
 					QtCore.QCoreApplication.translate("Dialog","Timezones Collision"),
 					QtCore.QCoreApplication.translate("Dialog","The selected images feature different timezone correction information.\nWhich one should be used?\nIf you cancel this dialog, timezone settings will be disabled."),
 					lst_timezones,0,False
@@ -1108,7 +1109,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 				str_union = QtCore.QCoreApplication.translate("Dialog","Apply union of all keywords to all images.")
 				str_inter = QtCore.QCoreApplication.translate("Dialog","Only edit keywords common to all images.")
 				str_diff  = QtCore.QCoreApplication.translate("Dialog","Remove common keywords and merge the remaining.")
-				(answer,ok) = QtGui.QInputDialog.getItem(self,
+				(answer,ok) = QtWidgets.QInputDialog.getItem(self,
 					QtCore.QCoreApplication.translate("Dialog","Keyword Collision"),
 					QtCore.QCoreApplication.translate("Dialog","The selected images feature different sets of keywords.\nWhat do you want to do?\nIf you cancel this dialog, keyword settings will be disabled."),
 					(str_inter,str_empty,str_union,str_diff),0,False
@@ -1167,7 +1168,7 @@ class FPPMainWindow(QtGui.QMainWindow):
 			elif l_copyright > 1 and enabled_copyright:
 				lst_copyright = ["None (clear copyright notice)"]
 				lst_copyright.extend(list(copyright))
-				(answer,ok) = QtGui.QInputDialog.getItem(self,
+				(answer,ok) = QtWidgets.QInputDialog.getItem(self,
 					QtCore.QCoreApplication.translate("Dialog","Copyright Collision"),
 					QtCore.QCoreApplication.translate("Dialog","The selected images feature different copyright notices.\nWhich one should be used?\nIf you cancel this dialog, copyright settings will be disabled."),
 					lst_copyright,0,False
@@ -1441,7 +1442,7 @@ Returns:
 		"""Process image list (cf. processChanges()) and store YAMLed command list.
 This method creates a "save file" dialog."""
 
-		filename = QtGui.QFileDialog.getSaveFileName(self,QtCore.QCoreApplication.translate("Dialog","Save File"))
+		filename = QtWidgets.QFileDialog.getSaveFileName(self,QtCore.QCoreApplication.translate("Dialog","Save File"))
 		if len(filename) > 0:
 			with open(filename,"w") as f:
 				yaml.dump(self.processChanges(),f)
@@ -1451,7 +1452,7 @@ This method creates a "save file" dialog."""
 	def applyChanges(self):
 		dlg = FotoPreProcessorWidgets.FPPApplyChangesDialog(self.ustr_path_exiftool)
 		dlg.addParameters(self.processChanges())
-		if dlg.exec_() == QtGui.QDialog.Accepted:
+		if dlg.exec_() == QtWidgets.QDialog.Accepted:
 			# everything worked as expected
 			# clear image list
 			self.setDirectory()
@@ -1489,7 +1490,7 @@ This method creates a "save file" dialog."""
 	
 	def configureProgram(self):
 		dlg = FotoPreProcessorWidgets.FPPSettingsDialog()
-		if dlg.exec_() == QtGui.QDialog.Accepted:
+		if dlg.exec_() == QtWidgets.QDialog.Accepted:
 			# Settings dialog modified QSettings -> load new parameters
 			# no checking is needed because the user confirmed the changes
 			settings = QtCore.QSettings()
@@ -1523,7 +1524,7 @@ This method creates a "save file" dialog."""
 
 	
 	def aboutQtDialog(self):
-		QtGui.QMessageBox.aboutQt(self)
+		QtWidgets.QMessageBox.aboutQt(self)
 
 
 
@@ -1586,7 +1587,7 @@ and you are welcome to redistribute it under certain conditions
 
 if __name__ == '__main__':
 	# setup Qt application and pass commandline arguments
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	
 	# initialise application information used by settings
 	app.setApplicationName("FotoPreProcessor")

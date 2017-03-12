@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 FotoPreProcessorItem: a custom QListWidgetItem
-Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2017 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -18,28 +18,26 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-$Id$
 """
 
 import datetime,pytz
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 
-class FPPGalleryItemDelegate(QtGui.QItemDelegate):
+class FPPGalleryItemDelegate(QtWidgets.QItemDelegate):
 	"""Class for a custom drawn list item.
 
 Depending on the (boolean) UserRole a custom marker can be placed over an
 icons pixmap. This is actually used in the GUI to mark an item as "edited"."""
 	
 	def __init__(self,icon=None):
-		QtGui.QItemDelegate.__init__(self)
+		QtWidgets.QItemDelegate.__init__(self)
 		try:    self.icon_changed = QtGui.QIcon(icon)
 		except: self.icon_changed = QtGui.QIcon()
 	
 	
 	def paint(self,painter,option,index):
-#		QtGui.QItemDelegate.paint(self,painter,option,index)
+#		QtWidgets.QItemDelegate.paint(self,painter,option,index)
 		
 		painter.save()
 		
@@ -81,7 +79,7 @@ icons pixmap. This is actually used in the GUI to mark an item as "edited"."""
 		painter.restore()
 
 
-class FPPGalleryItem(QtGui.QListWidgetItem):
+class FPPGalleryItem(QtWidgets.QListWidgetItem):
 	"""Class for a custom QListWidgetItem.
 
 The item is enhanced by properties for timestamp, GPS timestamp,
@@ -107,7 +105,7 @@ Appropriate methods for handling and showing these properties are defined, too."
 	
 	def __init__(self,parent=None):
 		"""Constructor; initialise fields."""
-		QtGui.QListWidgetItem.__init__(self,parent,1001)
+		QtWidgets.QListWidgetItem.__init__(self,parent,1001)
 		self.pix_thumb = QtGui.QPixmap(1,1)
 		
 		self.str_filename = str()
