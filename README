@@ -2,7 +2,7 @@
 FotoPreProcessor, a PyQT4-based program to manage (EXIF) metadata of images
 --------------------------------------------------------------------------------
 
-Copyright (C) 2012-2015 Frank Abelbeck <frank.abelbeck@googlemail.com>
+Copyright (C) 2012-2017 Frank Abelbeck <frank.abelbeck@googlemail.com>
 
 This file is part of the FotoPreProcessor program "FotoPreProcessor.py".
 
@@ -83,6 +83,8 @@ After editing, the user can choose to apply the changes that were made. The
 program will present the exiftool commands that will be neccessary, so that the
 user is able to abort the process.
 
+The user is also able to store the changes in a YAML file for later application.
+
 --------------------------------------------------------------------------------
 Requirements
 --------------------------------------------------------------------------------
@@ -90,13 +92,13 @@ Requirements
 Which programs and libraries are needed?
 (In parantheses: Gentoo Linux versions this program was created/tested with)
 
-Python   (3.3.5)
-pytz     (2014.10)
-exiftool (9.78)
-PyQt4    (4.11.3)
+Python   (3.4.5)
+pytz     (2017.2)
+exiftool (10.50)
+PyQt5    (5.7.1)
 
 --------------------------------------------------------------------------------
-Installation (Deprecated, Program Tarballs are not Updated Anymore)
+Installation (Deprecated, Program Tarballs are not Updated Anymore!)
 --------------------------------------------------------------------------------
 
 Extract the archive FotoPreProcessor.tar.gz to a directory accessible/writable
@@ -118,7 +120,7 @@ Files
 --------------------------------------------------------------------------------
 
 FotoPreProcessor.py           main program
-FotoPreProcessorItem.py       custom PyQt4.QtGui.QListWidgetItem
+FotoPreProcessorItem.py       custom PyQt5.QtGui.QListWidgetItem
 FotoPreProcessorOSM.html      custom OpenStreetMap webpage
 FotoPreProcessorTools.py      classes for GeoTagging, timezone correction etc.
 FotoPreProcessorWidgets.py    custom widgets: docks and dialogs
@@ -133,6 +135,12 @@ icons/unknownPicture2.png     icon "unknown picture"
 COPYING                       GPL v3 license text
 README                        (this file)
 zone.tab                      time zone info (local copy of timezone-data)
+
+--------------------------------------------------------------------------------
+Known Bugs due to Qt5 Porting
+--------------------------------------------------------------------------------
+ - shortcuts "k" (add keyword) and "m" (look-up map location) don't work anymore
+ - map marker is not shown since using QtWebKitWidgets.QWebView (PyQt5)
 
 --------------------------------------------------------------------------------
 Changelog
@@ -182,6 +190,9 @@ Changelog
             fixed preview behaviour: program now checks if a preview image is
             displayed correctly by comparing dimensions before and after loading
 
-2017-07-14: ported to Qt5 in spring '17; optimised some code (e.g. str() --> "",
+2017-07-14: ported to Qt5 in spring 2017 and fixed some porting issues;
+            optimised variable initialisation code (e.g. str() --> "",
             dict() --> {}); FPP now saves the original file's MD5 sum in the
-            EXIF tag "ImageUniqueID"
+            EXIF tag "ImageUniqueID"; fixed loading progress bar (now shows the
+            correct progress value even if non-image files are processed (and
+            ignored) by exiftool

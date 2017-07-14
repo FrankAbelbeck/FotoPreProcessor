@@ -25,7 +25,7 @@ import datetime,pytz,os.path,sys,codecs
 # 2015-06-16: search support needs urllib for requests and json for decoding
 import urllib.request,urllib.parse,json
 
-from PyQt5 import QtGui, QtWidgets, QtCore, QtWebKit
+from PyQt5 import QtGui, QtWidgets, QtCore, QtWebKitWidgets
 
 
 class FPPTimezone:
@@ -309,7 +309,7 @@ and allows to load and store location bookmarks in the application's settings.""
 		
 		# prepare progressbar (webpage loading progress) and webview
 		self.progressbar = QtWidgets.QProgressBar()
-		self.webview = QtWebKit.QWebView()
+		self.webview = QtWebKitWidgets.QWebView()
 		
 		# construct bookmark sidebar (bookmark list, add and delete button)
 		self.list_locations = QtWidgets.QListWidget()
@@ -502,7 +502,8 @@ and allows to load and store location bookmarks in the application's settings.""
 		
 		# start dialog by setting central layout and loading custom OSM page
 		self.setLayout(layout_central)
-		self.webview.load(QtCore.QUrl(os.path.join(sys.path[0],"FotoPreProcessorOSM.html")))
+		with open(os.path.join(sys.path[0],"FotoPreProcessorOSM.html"),"r") as f:
+			self.webview.setHtml(f.read())
 		self.webview.show()
 	
 	

@@ -695,6 +695,14 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 				
 				self.list_images.setUpdatesEnabled(False)
 				
+				# 2017-07-14: deal with files ignored by exiftool (i.e. non-image files)
+				#             by advancing the progress bar
+				if i + self.int_stepsize < l_filelist:
+					n_nonimages = self.int_stepsize - len(descriptionElements)
+				else:
+					n_nonimages = l_filelist - i - len(descriptionElements)
+				progress.setValue(progress.value()+n_nonimages)
+				
 				for k,description in enumerate(descriptionElements):
 					#
 					# process every identified image
