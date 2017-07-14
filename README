@@ -28,7 +28,7 @@ General information
 --------------------------------------------------------------------------------
 
 Author:  Frank Abelbeck
-Version: 2015-11-01
+Version: 2017-07-14
 Licence: GNU General Public License version 3
 
 --------------------------------------------------------------------------------
@@ -181,3 +181,7 @@ Changelog
             incorrect value, remnant of the preview fix 2015-11-01;
             fixed preview behaviour: program now checks if a preview image is
             displayed correctly by comparing dimensions before and after loading
+
+2017-07-14: ported to Qt5 in spring '17; optimised some code (e.g. str() --> "",
+            dict() --> {}); FPP now saves the original file's MD5 sum in the
+            EXIF tag "ImageUniqueID"

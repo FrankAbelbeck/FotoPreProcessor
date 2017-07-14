@@ -36,9 +36,9 @@ provides the ability to reverse look-up a timezone name by position."""
 	
 	def __init__(self):
 		"""Constructor; initialise fields"""
-		self.dct_timezones = dict()
-		self.dct_timezone_offsets = dict()
-		self.tpl_timezone_names = tuple()
+		self.dct_timezones = {}
+		self.dct_timezone_offsets = {}
+		self.tpl_timezone_names = ()
 	
 	
 	def loadTimezoneDB(self,filename="/usr/share/zoneinfo/zone.tab"):
@@ -56,7 +56,7 @@ file is not available, FPP will try its one version of that file."""
 		t_summer = datetime.datetime(2012,6,1,12,0,0)
 		self.dct_timezones.clear()
 		self.dct_timezone_offsets.clear()
-		lst_tzname = list()
+		lst_tzname = []
 		
 		if not os.path.isfile(filename):
 			filename = os.path.join(sys.path[0],"zone.tab")
@@ -117,7 +117,7 @@ file is not available, FPP will try its one version of that file."""
 		return self.tpl_timezone_names
 	
 	
-	def timezoneIndex(self,tzName=str()):
+	def timezoneIndex(self,tzName=""):
 		"""Return the index of given tzName in the timezone list.
 
 Returns -1 if tzName was not found."""
@@ -169,8 +169,8 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 	
 	def __init__(self):
 		"""Constructor; initialise fields."""
-		self.dct_locations = dict()
-		self.str_filename = str()
+		self.dct_locations = {}
+		self.str_filename = ""
 		self.bool_changed = False
 	
 	def wasChanged(self):
@@ -196,7 +196,7 @@ Lines starting with a # as well as ill-formed coordinates are ignored."""
 			pass
 	
 	
-	def loadList(self,bookmarks=tuple()):
+	def loadList(self,bookmarks=()):
 		"""Populate internal bookmark database using given list.
 
 bookmarks is expected to be a tuple or list of unicode strings. Each string
@@ -205,7 +205,7 @@ should consist of latitude, longitude and bookmark name separated by blanks:
 0.00000 0.00000 Point in the Atlantic Ocean
 """
 		try:    bookmarks = tuple(bookmarks)
-		except: bookmarks = tuple()
+		except: bookmarks = ()
 		
 		self.dct_locations.clear()
 		for bookmark in bookmarks:
@@ -304,7 +304,7 @@ and allows to load and store location bookmarks in the application's settings.""
 		self.tz = FPPTimezone()
 		self.tz.loadTimezoneDB()
 		self.bookmarks = FPPGeoBookmarks()
-		try:    self.bookmarks.loadList([str(i) for i in settings.value("LocationBookmarks",list())])
+		try:    self.bookmarks.loadList([str(i) for i in settings.value("LocationBookmarks",[])])
 		except: pass
 		
 		# prepare progressbar (webpage loading progress) and webview
@@ -713,7 +713,7 @@ Sets latitude and longitude and places a marker."""
 		if self.bookmarks.wasChanged:
 			settings = QtCore.QSettings()
 			settings.setIniCodec(QtCore.QTextCodec.codecForName("UTF-8"))
-			bookmarks = list()
+			bookmarks = []
 			for name,(latitude,longitude) in self.bookmarks.listLocations():
 				bookmarks.append("{0} {1} {2}".format(latitude,longitude,name))
 			if len(bookmarks) == 1: bookmarks = bookmarks[0]
@@ -732,7 +732,7 @@ In addition, a plain list export was added to enable interaction with QSettings.
 	def __init__(self):
 		"""Constructor; initialise fields."""
 		self.set_database = set()
-		self.str_filename = str()
+		self.str_filename = ""
 		self.bool_changed = False
 	
 	
@@ -756,12 +756,12 @@ In addition, a plain list export was added to enable interaction with QSettings.
 			self.bool_changed = False
 	
 	
-	def loadList(self,list_strings=list()):
+	def loadList(self,list_strings=[]):
 		"""Populate internal bookmark database using given list.
 
 list_strings is expected to be a tuple or list of unicode strings."""
 		try:    list_strings = tuple(list_strings)
-		except: list_strings = tuple()
+		except: list_strings = ()
 		self.set_database.clear()
 		for item in list_strings: self.set_database.add(str(item.strip()))
 	
@@ -771,7 +771,7 @@ list_strings is expected to be a tuple or list of unicode strings."""
 		return tuple(self.set_database)
 	
 	
-	def add(self,string=str()):
+	def add(self,string=""):
 		"""Add a string to the database. If the string already exists, nothing is changed."""
 		try:
 			l_old = len(self.set_database)
@@ -782,7 +782,7 @@ list_strings is expected to be a tuple or list of unicode strings."""
 			pass
 	
 	
-	def delete(self,string=str()):
+	def delete(self,string=""):
 		"""Delete a string from the database. Does nothing if the string doesn't exist."""
 		try:
 			self.set_database.remove(str(string))

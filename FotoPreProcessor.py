@@ -31,8 +31,12 @@ VERSION="2017-03-12"
 #             upgrade to new signal/slot mechanism, file naming now configurable
 # 2015-10-26: flexible file naming activated
 # 2017-03-12: ported to PyQt5
+# 2017-07-14: added original file MD5 sum as ImageUniqueID tag;
+#             eliminated str(), list(), tuple() and dict() calls by replacing
+#             with "", [], () and {}; file list is now sorted.
 
 import sys,os,subprocess,time,pytz,datetime,codecs,xml.dom.minidom,base64,re,yaml
+import hashlib
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 
@@ -554,7 +558,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 		else:
 			# either path does not exist or Exiftool is not defined
 			# delete list, reset path and title...
-			self.ustr_path = str()
+			self.ustr_path = ""
 			self.setWindowTitle(
 				QtCore.QCoreApplication.translate(
 					"MainWindow",
@@ -591,7 +595,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 	
 	
 	def getFirstTextChild(self,node=None):
-		value = str()
+		value = ""
 		for child in node.childNodes:
 			if child.nodeType == node.TEXT_NODE and len(child.nodeValue.strip()) > 0:
 				value = str(node.childNodes[0].nodeValue.strip())
@@ -618,10 +622,11 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 		# 2012-10-17, bug: program is stalled when a directory is part of the filelist
 		# solution: scan filelist and remove all non-regular files
 		# 2014-01-17: removed .decode() as it ran into errors with UTF-8 filenames
+		# 2017-07-14: file list is now sorted by name
 		try:
-			filelist = [os.path.join(self.ustr_path,i) for i in os.listdir(self.ustr_path) if os.path.isfile(os.path.join(self.ustr_path,i))]
+			filelist = [os.path.join(self.ustr_path,i) for i in sorted(os.listdir(self.ustr_path)) if os.path.isfile(os.path.join(self.ustr_path,i))]
 		except:
-			filelist = list()
+			filelist = []
 		
 		l_filelist = len(filelist)
 		progress.setRange(0,l_filelist)
@@ -675,7 +680,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 				# os.read is needed for stdout/stderr "file" objects...
 				# in addition, exiftool output ends with {ready}, so we have to catch it
 				f_stdout = proc_exiftool.stdout.fileno()
-				str_output = str()
+				str_output = ""
 				QtCore.QCoreApplication.processEvents()
 				while not str_output[-64:].strip().endswith('{ready}'):
 					# read until {ready} occurs
@@ -686,7 +691,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 				try:
 					descriptionElements = xml.dom.minidom.parseString(str_output).getElementsByTagName("rdf:Description")
 				except:
-					descriptionElements = tuple()
+					descriptionElements = ()
 				
 				self.list_images.setUpdatesEnabled(False)
 				
@@ -706,29 +711,32 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 						filename
 					))
 					
-					timestamp    = str()
-					focalLength  = str()
-					cropFactor   = str()
-					aperture     = str()
-					shutterSpeed = str()
-					isoValue     = str()
-					cameraModel  = str()
-					lensType     = str()
-					thumbArea    = str()
-					latitude     = str()
-					latitudeRef  = str()
-					longitude    = str()
-					longitudeRef = str()
-					elevation    = str()
-					elevationRef = str()
-					thumbData    = str()
-					previewData  = str()
-					author       = str()
-					copyright    = str()
+					timestamp    = ""
+					focalLength  = ""
+					cropFactor   = ""
+					aperture     = ""
+					shutterSpeed = ""
+					isoValue     = ""
+					cameraModel  = ""
+					lensType     = ""
+					thumbArea    = ""
+					latitude     = ""
+					latitudeRef  = ""
+					longitude    = ""
+					longitudeRef = ""
+					elevation    = ""
+					elevationRef = ""
+					thumbData    = b""
+					previewData  = b""
+					author       = ""
+					copyright    = ""
 					imgwidth     = -1
 					imgheight    = -1
 					item = FotoPreProcessorItem.FPPGalleryItem(self.list_images)
 					item.setFilename(filename)
+					# 2017-07-14: store original file's MD5 sum (hexadecimal representation)
+					with open(filepath,"rb") as f:
+						item.setDigest(hashlib.md5(f.read()).hexdigest())
 					
 					for node in description.childNodes:
 						#
@@ -740,7 +748,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 						elif node.localName == "DateTimeOriginal":
 							timestamp = self.getFirstTextChild(node)
 						elif node.localName == "Keywords":
-							keywords = list()
+							keywords = []
 							rdfBag = node.getElementsByTagName("rdf:Bag")
 							if len(rdfBag) > 0:
 								# more than one keyword: stored as RDF bag,
@@ -960,7 +968,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 	
 	def openPreviewImage(self,item):
 		# present preview of the image list item currently double-clicked
-		self.list_images.setCurrentRow(self.list_images.currentRow(),QtWidgets.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(self.list_images.currentRow(),QtCore.QItemSelectionModel.ClearAndSelect)
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
 		self.main_widget.setCurrentIndex(1)
@@ -979,7 +987,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 			index = count - 1
 		else:
 			index = index - 1
-		self.list_images.setCurrentRow(index,QtWidgets.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(index,QtCore.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
@@ -993,7 +1001,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 			index = 0
 		else:
 			index = index + 1
-		self.list_images.setCurrentRow(index,QtWidgets.QItemSelectionModel.ClearAndSelect)
+		self.list_images.setCurrentRow(index,QtCore.QItemSelectionModel.ClearAndSelect)
 		item = self.list_images.currentItem()
 		self.scroll_image_label.updateItem(self.ustr_path,item)
 		self.scroll_image_label.adjustSize()
@@ -1068,7 +1076,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 					pass
 				enabled_tz = True
 			elif l_timezones > 1 and enabled_tz:
-				lst_timezones = list()
+				lst_timezones = []
 				timezones.add(("UTC","UTC"))
 				for tz in timezones:
 					lst_timezones.append("{0} → {1}".format(*tz))
@@ -1096,7 +1104,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 			# import keywords or resolve conflicts
 			enabled_keywords = self.dock_keywords.isEnabled()
 			self.dock_keywords.setKeywords()
-			tpl_kws = tuple()
+			tpl_kws = ()
 			if l_keywords <=  1:
 				try:
 					tpl_kws = tuple(keywords.pop())
@@ -1119,7 +1127,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 					keywordsEdited = False
 					if answer == str_empty:
 						# clear keywords of all selected items
-						tpl_kws = tuple()
+						tpl_kws = ()
 						for item in items:
 							item.setKeywords(tpl_kws)
 							keywordsEdited = keywordsEdited or item.keywordsEdited()
@@ -1158,7 +1166,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 			
 			# import copyright data or resolve conflicts
 			enabled_copyright = self.dock_copyright.isEnabled()
-			copyrightNotice = str()
+			copyrightNotice = ""
 			if l_copyright <= 1:
 				try:
 					copyrightNotice = copyright.pop()
@@ -1280,7 +1288,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 	# timezones: methods
 	#-----------------------------------------------------------------------
 	
-	def updateTimezones(self,ftz=str(),ttz=str()):
+	def updateTimezones(self,ftz="",ttz=""):
 		try:
 			fromTz = str(ftz)
 			toTz   = str(ttz)
@@ -1302,7 +1310,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 	# keywords: methods
 	#-----------------------------------------------------------------------
 	
-	def addKeyword(self,keyword=str()):
+	def addKeyword(self,keyword=""):
 		try:
 			keyword = str(keyword)
 			edited = False
@@ -1315,7 +1323,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 			pass
 	
 	
-	def removeKeyword(self,keyword=str()):
+	def removeKeyword(self,keyword=""):
 		try:
 			keyword = str(keyword)
 			edited = False
@@ -1336,7 +1344,7 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 	# copyright: methods
 	#-----------------------------------------------------------------------
 	
-	def updateCopyright(self,notice=str()):
+	def updateCopyright(self,notice=""):
 		try:
 			notice = str(notice)
 			edited = False
@@ -1360,16 +1368,18 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 
 Returns:
    A list of lists: [[cmd,arg1,...argn],...]"""
-		commands = list()
-		dct_parameters = dict()
-		lst_all_files = list()
+		commands = []
+		dct_parameters = {}
+		lst_all_files = []
 		for i in range(0,self.list_images.count()):
 			item = self.list_images.item(i)
 			name = str(os.path.join(self.ustr_path,item.filename()))
 			lst_all_files.append(name)
 			
 			if item.edited():
-				parameters = list()
+				# 2017-07-14: start parameter list with the original file's MD5 sum,
+				# stored as image UID; also store original filename
+				parameters = [ "-ImageUniqueID={}".format(item.digest()) ]
 				
 				if item.orientationEdited():
 					# need to set --printConv for Orientation by adding "#"
@@ -1394,12 +1404,12 @@ Returns:
 						else:
 							elevationRef = "0"
 					except:
-						latitude     = str()
-						latitudeRef  = str()
-						longitude    = str()
-						longitudeRef = str()
-						elevation    = str()
-						elevationRef = str()
+						latitude     = ""
+						latitudeRef  = ""
+						longitude    = ""
+						longitudeRef = ""
+						elevation    = ""
+						elevationRef = ""
 					parameters.append("-GPSLatitude={0}".format(latitude))
 					parameters.append("-GPSLatitudeRef={0}".format(latitudeRef))
 					parameters.append("-GPSLongitude={0}".format(longitude))
@@ -1412,8 +1422,8 @@ Returns:
 						t     = item.shiftedTimestamp().strftime("%Y:%m:%d %H:%M:%S")
 						t_utc = item.utcTimestamp().strftime("%Y:%m:%d %H:%M:%S")
 					except:
-						t     = str()
-						t_utc = str()
+						t     = ""
+						t_utc = ""
 					parameters.append("-AllDates={0}".format(t))
 					parameters.append("-GPSDateStamp={0}".format(t_utc))
 					parameters.append("-GPSTimeStamp={0}".format(t_utc))
@@ -1442,7 +1452,7 @@ Returns:
 		"""Process image list (cf. processChanges()) and store YAMLed command list.
 This method creates a "save file" dialog."""
 
-		filename = QtWidgets.QFileDialog.getSaveFileName(self,QtCore.QCoreApplication.translate("Dialog","Save File"))
+		filename,filefilter = QtWidgets.QFileDialog.getSaveFileName(self,QtCore.QCoreApplication.translate("Dialog","Save File"))
 		if len(filename) > 0:
 			with open(filename,"w") as f:
 				yaml.dump(self.processChanges(),f)

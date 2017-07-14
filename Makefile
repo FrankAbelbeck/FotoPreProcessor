@@ -19,5 +19,5 @@
 .PHONY : translation_de
 
 translation_de:
-	@/usr/bin/pylupdate4 -noobsolete FotoPreProcessor*.py -ts i18n/FotoPreProcessor.de.ts
+	@/usr/bin/pylupdate5 -noobsolete FotoPreProcessor*.py -ts i18n/FotoPreProcessor.de.ts
 	@/usr/bin/linguist i18n/FotoPreProcessor.de.ts

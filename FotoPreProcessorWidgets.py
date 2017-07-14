@@ -358,7 +358,7 @@ Attributes: Delete on close"""
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
 		
 		self.DBKeywords = FotoPreProcessorTools.FPPStringDB()
-		try:    self.DBKeywords.loadList([str(i) for i in settings.value("Keywords",list())])
+		try:    self.DBKeywords.loadList([str(i) for i in settings.value("Keywords",[])])
 		except: pass
 		
 		#
@@ -430,7 +430,7 @@ Attributes: Delete on close"""
 		self.updateRemoveButtonState()
 	
 	
-	def setKeywords(self,keywords=tuple()):
+	def setKeywords(self,keywords=()):
 		try:
 			self.set_keywords = set([str(i) for i in keywords])
 			self.list_keywords.clear()
@@ -493,7 +493,7 @@ Attributes: Delete on close"""
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose,False)
 		
 		self.DBCopyright = FotoPreProcessorTools.FPPStringDB()
-		try:    self.DBCopyright.loadList([str(i) for i in settings.value("Copyright",list())])
+		try:    self.DBCopyright.loadList([str(i) for i in settings.value("Copyright",[])])
 		except: pass
 		
 		self.edit_copyright = QtWidgets.QLineEdit()
@@ -525,7 +525,7 @@ Attributes: Delete on close"""
 
 	
 	
-	def setCopyright(self,notice=str()):
+	def setCopyright(self,notice=""):
 		try:
 			notice = str(notice)
 			if len(notice) > 0:
@@ -599,15 +599,15 @@ class FPPApplyChangesDialog(QtWidgets.QDialog):
 		
 		self.progressbar.hide()
 		
-		self.lst_commands = list()
+		self.lst_commands = []
 		self.setStyleSheet(":disabled { color: gray; }")
 		self.bool_isRunning = None
-		self.dict_parameters = dict()
+		self.dict_parameters = {}
 		self.ustr_path_exiftool = ustr_path_exiftool
 	
 	
 	def addChangesFiles(self):
-		filenames = QtWidgets.QFileDialog.getOpenFileNames(self)
+		filenames,filters = QtWidgets.QFileDialog.getOpenFileNames(self)
 		for filename in filenames:
 			try:
 				with open(filename,"r") as f:
@@ -618,7 +618,7 @@ class FPPApplyChangesDialog(QtWidgets.QDialog):
 	
 	def calculate_commands(self):
 		self.konsole.clear()
-		self.lst_commands = list()
+		self.lst_commands = []
 		for name,parameters in self.dict_parameters.items():
 			command = [self.ustr_path_exiftool,"-P","-overwrite_original"]
 			command.extend(parameters)
@@ -914,7 +914,7 @@ class FPPSettingsDialog(QtWidgets.QDialog):
 	
 	
 	def selectExiftool(self):
-		path = QtWidgets.QFileDialog.getOpenFileName(self,
+		path,pathfilter = QtWidgets.QFileDialog.getOpenFileName(self,
 			QtCore.QCoreApplication.translate("Dialog","Select Exiftool Executable"),
 			self.edit_exiftool.text(),
 			"","",
@@ -925,7 +925,7 @@ class FPPSettingsDialog(QtWidgets.QDialog):
 	
 	
 	def selectTheGimp(self):
-		path = QtWidgets.QFileDialog.getOpenFileName(self,
+		path,pathfilter = QtWidgets.QFileDialog.getOpenFileName(self,
 			QtCore.QCoreApplication.translate("Dialog","Select The GIMP Executable"),
 			self.edit_gimp.text(),
 			"","",

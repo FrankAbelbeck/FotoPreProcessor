@@ -41,7 +41,7 @@ icons pixmap. This is actually used in the GUI to mark an item as "edited"."""
 		
 		painter.save()
 		
-		if option.state & QtGui.QStyle.State_Selected:
+		if option.state & QtWidgets.QStyle.State_Selected:
 			painter.fillRect(option.rect,option.palette.highlight())
 		
 		painter.setRenderHint(QtGui.QPainter.Antialiasing, True)
@@ -108,22 +108,25 @@ Appropriate methods for handling and showing these properties are defined, too."
 		QtWidgets.QListWidgetItem.__init__(self,parent,1001)
 		self.pix_thumb = QtGui.QPixmap(1,1)
 		
-		self.str_filename = str()
+		# 2017-07-14: store original file's MD5 sum
+		self.str_digest = ""
+		
+		self.str_filename = ""
 		self.date_timestamp = None
-		self.str_cameraSettings = str()
-		self.str_cameraHardware = str()
-		self.str_copyright = str()
+		self.str_cameraSettings = ""
+		self.str_cameraHardware = ""
+		self.str_copyright = ""
 		
 		self.int_orientation = 1
 		self.int_rotation = 0
 		self.tpl_timezones = ("UTC","UTC")
-		self.tpl_location = tuple()
-		self.tpl_keywords = tuple()
+		self.tpl_location = ()
+		self.tpl_keywords = ()
 		
 		self.tpl_saved_timezones = ("UTC","UTC")
-		self.tpl_saved_location = tuple()
-		self.tpl_saved_keywords = tuple()
-		self.str_saved_copyright = str()
+		self.tpl_saved_location = ()
+		self.tpl_saved_keywords = ()
+		self.str_saved_copyright = ""
 		
 		self.int_timeshift = 0
 		self.date_shiftedTimestamp = None
@@ -313,6 +316,21 @@ Note: This is based on a variable which gets updated by updateEditState()."""
 		return self.str_filename
 	
 	
+	def setDigest(self,digest=None):
+		"""Set filename property."""
+		if digest != None:
+			try:
+				self.str_digest = str(digest)
+			except:
+				pass
+		return self.str_digest
+	
+	
+	def digest(self):
+		"""Return the item's original file MD5 sm as hex string. Might be empty."""
+		return self.str_digest
+	
+	
 	def setThumbnail(self,pixmap=None):
 		"""Set thumbnail image. Expects a QPixmap."""
 		try:
@@ -375,7 +393,7 @@ original timestamp and the result is stored internally for display purposes."""
 		self.updateEditState
 	
 	
-	def setTimestamp(self,tpl_timestamp=tuple()):
+	def setTimestamp(self,tpl_timestamp=()):
 		"""Set the item's timestamp.
 
 Expects a tuple (year,month,day,hour,minute,second) of integers."""
@@ -503,7 +521,7 @@ Applying 90° steps, clockwise, results in following EXIF orientation cycle:
 		self.updateToolTip()
 	
 	
-	def addKeyword(self,keyword=str()):
+	def addKeyword(self,keyword=""):
 		try:
 			keywords = list(self.tpl_keywords)
 			keywords.append(str(keyword))
@@ -514,7 +532,7 @@ Applying 90° steps, clockwise, results in following EXIF orientation cycle:
 			pass
 	
 	
-	def removeKeyword(self,keyword=str()):
+	def removeKeyword(self,keyword=""):
 		try:
 			keywords = list(self.tpl_keywords)
 			keywords.remove(str(keyword))
@@ -525,7 +543,7 @@ Applying 90° steps, clockwise, results in following EXIF orientation cycle:
 			pass
 	
 	
-	def setKeywords(self,keywords=tuple()):
+	def setKeywords(self,keywords=()):
 		"""Define a new keyword tuple for this item.
 
 The parameter keywords is expected to be a set, list or tuple of strings
@@ -543,7 +561,7 @@ whicht will be converted to a tuple of unicode strings."""
 		return self.tpl_keywords
 	
 	
-	def setCameraSettings(self,settings=str()):
+	def setCameraSettings(self,settings=""):
 		"""Set camera settings string. Expects a unicode string.
 
 Recommended settings: focal length, aperture, shutter speed and ISO level, e.g.:
@@ -561,7 +579,7 @@ Recommended settings: focal length, aperture, shutter speed and ISO level, e.g.:
 		return self.str_cameraSettings
 	
 	
-	def setCameraHardware(self,hardware=str()):
+	def setCameraHardware(self,hardware=""):
 		"""Set camera hardware string. Expects a unicode string.
 
 Hardware: Camera model and/or lens type, e.g.:
@@ -579,7 +597,7 @@ Hardware: Camera model and/or lens type, e.g.:
 		return self.str_cameraHardware
 	
 	
-	def setCopyright(self,notice=str()):
+	def setCopyright(self,notice=""):
 		"""Set copyright string. Expects a unicode string."""
 		if notice != None:
 			try:
@@ -607,7 +625,7 @@ If any of the coordinates equals None, location information will be erased."""
 		try:
 			self.tpl_location = (float(latitude),float(longitude),float(elevation))
 		except:
-			self.tpl_location = tuple()
+			self.tpl_location = ()
 		self.updateEditState()
 		self.updateToolTip()
 	
