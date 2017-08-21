@@ -137,8 +137,8 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 		"""Constructor: initialise fields, load timezone DB and construct GUI ."""
 		super().__init__()
 		self.dct_iconsize = {
-			" 32x32":   QtCore.QSize( 32, 32),
-			" 64x64":   QtCore.QSize( 64, 64),
+			" 32x32":  QtCore.QSize( 32, 32),
+			" 64x64":  QtCore.QSize( 64, 64),
 			"128x128": QtCore.QSize(128,128),
 			"160x160": QtCore.QSize(160,160),
 			"256x256": QtCore.QSize(256,256),
@@ -576,6 +576,8 @@ class FPPMainWindow(QtWidgets.QMainWindow):
 				if action.isChecked(): break
 		else:
 			self.ustr_iconsize = str(action.text())
+		# fixing erroneous ampersand in string returned by text()
+		self.ustr_iconsize = self.ustr_iconsize.replace("&","")
 		self.list_images.setIconSize(self.dct_iconsize[self.ustr_iconsize])
 		for i in range(0,self.list_images.count()):
 			self.list_images.item(i).updateIcon()
